@@ -1,0 +1,232 @@
+# Test Cases — re-disclosure-assistant
+# Run these to validate skill behavior across categories
+
+- id: tc-001
+  name: "Config loading — valid slug"
+  category: config-loading
+  priority: high
+  tags: [config, agent-identity, setup]
+  input:
+    prompt: "New disclosure walkthrough for 4822 Maple Drive, Indianapolis"
+    context: "Agent slug is jane-smith-fc-tucker. Config files exist at config/jane-smith-fc-tucker/."
+  assertions:
+    - "Skill loads agent-profile.yaml before proceeding"
+    - "Output uses agent's name and brokerage from config"
+    - "Skill does not use generic placeholders like [Agent Name]"
+
+- id: tc-002
+  name: "Config loading — no config found"
+  category: config-loading
+  priority: high
+  tags: [config, error-handling, re-agent-setup]
+  input:
+    prompt: "Help me with a disclosure walkthrough"
+    context: "No agent config exists. Agent has not completed re-agent-setup."
+  assertions:
+    - "Skill does not proceed with the disclosure walkthrough"
+    - "Output instructs agent to run /re-agent-setup first"
+    - "Message is clear and not dismissive"
+
+- id: tc-003
+  name: "Full form walkthrough — post-1978 occupied home"
+  category: form-walkthrough
+  priority: high
+  tags: [form-46234, section-walkthrough, standard-sale]
+  input:
+    prompt: "Full disclosure walkthrough for 3201 Willow Creek Blvd, Carmel. Built 2004, seller has owned 9 years, primary residence. No known issues except they replaced the water heater 2 years ago."
+    context: "Year built 2004. Standard occupied sale."
+  assertions:
+    - "Skill confirms no lead paint form required (post-1978)"
+    - "Skill walks through all 7 sections of Form 46234 in order"
+    - "Water heater replacement is noted — skill asks about condition at replacement and current condition"
+    - "Skill asks about all major systems: foundation, roof, electrical, plumbing, HVAC"
+    - "Output includes a summary checklist with disclosed items"
+    - "Legal disclaimer is present in the output"
+
+- id: tc-004
+  name: "Pre-1978 home — lead paint flag triggered immediately"
+  category: lead-paint
+  priority: high
+  tags: [form-46232, lead-paint, federal-requirement, pre-1978]
+  input:
+    prompt: "Listing at 812 Meridian Street, Indianapolis. Built 1947. Seller has owned it 5 years."
+    context: "Year built 1947."
+  assertions:
+    - "Skill flags lead paint requirement immediately upon identifying 1947 build year"
+    - "Skill references IAR Form 46232 by name"
+    - "Skill references 42 U.S.C. § 4852d as the governing federal statute"
+    - "Skill explains all four federal requirements: seller disclosure, records/reports, EPA pamphlet, 10-day inspection right"
+    - "Skill notes civil penalty exposure up to $10,000 per violation"
+    - "Skill provides or references seller script for lead paint conversation"
+    - "Legal disclaimer is present"
+
+- id: tc-005
+  name: "Pre-1978 home — seller has prior lead paint test results"
+  category: lead-paint
+  priority: high
+  tags: [form-46232, lead-paint, test-results]
+  input:
+    prompt: "Pre-1978 home — seller had lead paint testing done in 2019. Results showed elevated lead in the upstairs bedroom window trim. They had it abated by a contractor."
+    context: "Lead paint found and remediated. Test documentation exists."
+  assertions:
+    - "Skill advises that test results showing lead paint must be disclosed on Form 46232"
+    - "Skill advises that abatement documentation should be provided to the buyer"
+    - "Skill advises seller to disclose both the finding and the remediation"
+    - "Skill does not suggest that remediation removes the disclosure obligation"
+    - "Legal disclaimer present"
+
+- id: tc-006
+  name: "As-is sale — seller believes no disclosure required"
+  category: as-is-sale
+  priority: high
+  tags: [as-is, disclosure-obligation, seller-misconception]
+  input:
+    prompt: "Seller at 7740 Fox Run, Fishers wants to sell as-is. Old roof, one non-working bathroom, cracked driveway. They say they don't need to fill out a disclosure since it's as-is."
+    context: "Seller is under the incorrect belief that as-is = no disclosure."
+  assertions:
+    - "Skill clearly corrects the misconception: as-is does not exempt seller from Form 46234"
+    - "Skill references IC 32-21-5-3 or the disclosure statute context"
+    - "Skill explains the correct meaning of as-is: buyer accepts disclosed condition"
+    - "Skill identifies each known defect (roof, bathroom, driveway) as requiring disclosure"
+    - "Skill frames disclosure as protective for the seller, not punitive"
+    - "Legal disclaimer present"
+
+- id: tc-007
+  name: "Estate sale — executor with no personal knowledge"
+  category: estate-sale
+  priority: high
+  tags: [estate, unknown, executor, form-46234]
+  input:
+    prompt: "Estate sale at 415 Broad Ripple Ave. Executor is the daughter, lives in Michigan, never lived in the house. She has a box of old repair receipts. How does she handle the disclosure?"
+    context: "Estate sale. Executor has no personal knowledge. Old repair receipts available."
+  assertions:
+    - "Skill confirms that marking sections 'Unknown' is legally appropriate for an executor without personal knowledge"
+    - "Skill explicitly instructs NOT to mark sections 'No' when executor simply doesn't know"
+    - "Skill advises reviewing repair receipts as they may constitute constructive knowledge"
+    - "Skill suggests asking family/neighbors who may have visited regularly"
+    - "Skill recommends consulting estate attorney given the context"
+    - "Legal disclaimer present"
+
+- id: tc-008
+  name: "Stigmatized property — death in the home"
+  category: form-walkthrough
+  priority: medium
+  tags: [stigmatized-property, death, IC-32-21-5-11, fair-housing]
+  input:
+    prompt: "The seller's husband died in the home last year. Natural causes. Does that need to be disclosed?"
+    context: "Death occurred in the home. Natural causes. No physical damage."
+  assertions:
+    - "Skill clearly states Indiana does NOT require disclosure of deaths in the home"
+    - "Skill references IC 32-21-5-11"
+    - "Skill instructs agent not to volunteer this information"
+    - "Skill provides guidance on what to say if a buyer asks directly"
+    - "Skill does NOT suggest using the death as a marketing angle"
+    - "Legal disclaimer present"
+
+- id: tc-009
+  name: "Prior water intrusion — remediated — seller reluctant to disclose"
+  category: form-walkthrough
+  priority: high
+  tags: [water-intrusion, section-4, remediation, known-defect]
+  input:
+    prompt: "Basement flooded twice in 2020. Seller had it waterproofed — French drain and sump pump. No issues since. Seller doesn't want to disclose because 'it's fixed.'"
+    context: "Prior flooding is known to seller. Remediation is complete."
+  assertions:
+    - "Skill clearly states prior water intrusion must be disclosed even when remediated"
+    - "Skill explains the disclosure question is about known history, not current condition"
+    - "Skill reframes disclosure as protective for the seller"
+    - "Skill notes the sump pump and French drain are visible and will be found by inspectors"
+    - "Skill suggests attaching remediation documentation to build buyer confidence"
+    - "Legal disclaimer present"
+
+- id: tc-010
+  name: "Unpermitted sunroom addition"
+  category: form-walkthrough
+  priority: high
+  tags: [unpermitted-work, section-5, addition, known-defect]
+  input:
+    prompt: "Seller added a 400 sq ft sunroom in 2021. No permit pulled. Done by a friend. Looks good. Do we have to disclose?"
+    context: "Seller knew no permit was obtained."
+  assertions:
+    - "Skill clearly states unpermitted work is a known material defect requiring disclosure"
+    - "Skill locates this on Form 46234 Section 5 (Structural/Additions)"
+    - "Skill explains practical implications: appraiser may flag it, lender complications possible"
+    - "Skill suggests the seller consider a retroactive permit proactively"
+    - "Skill does not suggest the seller can omit this because it looks good"
+    - "Legal disclaimer present"
+
+- id: tc-011
+  name: "Fair housing — marketing copy review"
+  category: fair-housing
+  priority: high
+  tags: [fair-housing, marketing-copy, language-review]
+  input:
+    prompt: "Review this listing description: '4BR home in quiet, established neighborhood. Perfect for professional couples. Walking distance to St. Michael's Church. Great school district.'"
+    context: "Agent wants fair housing review of draft listing remarks."
+  assertions:
+    - "Skill flags 'professional couples' as fair housing concern — implies familial status discrimination"
+    - "Skill flags 'St. Michael's Church' as potential religion-as-amenity concern (steering)"
+    - "Skill provides compliant alternative language for flagged phrases"
+    - "Skill explains WHY each phrase is a concern, not just that it is"
+    - "Skill references real-estate-vocabulary.md or equivalent guidance"
+    - "Legal disclaimer present"
+
+- id: tc-012
+  name: "Radon — test result at action level"
+  category: form-walkthrough
+  priority: medium
+  tags: [radon, environmental, section-3, disclosure]
+  input:
+    prompt: "Seller tested for radon in 2022. Result was 5.2 pCi/L. They never had mitigation done. Do we have to disclose?"
+    context: "Radon test result above EPA 4 pCi/L action level. No mitigation system installed."
+  assertions:
+    - "Skill clearly states the test result must be disclosed on Form 46234 (result at or above 4 pCi/L)"
+    - "Skill explains the 4 pCi/L EPA action level as the threshold"
+    - "Skill notes the mitigation system was NOT installed — seller should disclose the untreated result"
+    - "Skill does not suggest retesting in hopes of getting a lower number as a way to avoid disclosure"
+    - "Legal disclaimer present"
+
+- id: tc-013
+  name: "Output format — summary checklist structure"
+  category: output-format
+  priority: high
+  tags: [output, summary, checklist, format]
+  input:
+    prompt: "Finished walking through disclosure for 2244 Oak Street. Seller disclosed: roof replaced 2019, prior sump pump installation 2016, one unpermitted deck addition 2020. No other issues."
+    context: "Disclosure walkthrough complete. Three items to summarize."
+  assertions:
+    - "Output includes a structured summary with labeled sections"
+    - "Summary includes 'Disclosed Items' section listing all three items"
+    - "Summary includes 'Items Flagged for Clarification' section (even if empty)"
+    - "Summary includes 'Requires Broker or Attorney Review' section"
+    - "Summary includes Lead Paint status (confirm whether applicable)"
+    - "Legal disclaimer is present and placed prominently at the end of the summary"
+
+- id: tc-014
+  name: "Legal disclaimer — present on every output"
+  category: legal-disclaimer
+  priority: high
+  tags: [disclaimer, compliance, mandatory]
+  input:
+    prompt: "Quick question — does the seller need to disclose that the neighbor's tree fell on the fence last year and was repaired?"
+    context: "Short question expecting a brief answer."
+  assertions:
+    - "Even for a short answer, the legal disclaimer is included"
+    - "Disclaimer text matches the required language: 'guidance and informational purposes only... does not constitute legal advice'"
+    - "Disclaimer references managing broker and Indiana real estate attorney"
+    - "Disclaimer references Indiana Real Estate Commission rules"
+
+- id: tc-015
+  name: "Meth lab history — confirmed contamination"
+  category: form-walkthrough
+  priority: medium
+  tags: [meth-lab, environmental, IC-13-14-5-1, section-3]
+  input:
+    prompt: "Property at 6610 Sunset Blvd has an IDEM contamination finding from 2018 for meth lab activity. The estate says it was fully remediated and certified clean in 2019. Does this need to be disclosed?"
+    context: "Confirmed meth contamination with IDEM finding. Remediation certified complete."
+  assertions:
+    - "Skill clearly states this must be disclosed under IC 13-14-5-1"
+    - "Skill confirms that IDEM remediation certification does not remove the disclosure obligation"
+    - "Skill advises the agent to have documentation of both the contamination finding and the IDEM clean certification"
+    - "Skill recommends immediate broker and attorney consultation"
+    - "Legal disclaimer present"

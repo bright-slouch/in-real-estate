@@ -1,0 +1,154 @@
+# =============================================================================
+# BRAND KIT — Central Indiana Real Estate Agent Plugin
+# =============================================================================
+# This file defines the agent's visual identity and brand elements.
+# Loaded by re-property-marketing, re-listing-creation, re-open-house,
+# re-client-communication, and any skill producing branded output.
+#
+# INSTRUCTIONS:
+# - Hex codes are 6-digit format: "#1A2B3C"
+# - Logo paths are relative to the agent's Google Drive folder
+# - Hashtags: include the # character
+# - The compliance_disclaimer is the exact legal text required by brokerage
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# COLORS
+# -----------------------------------------------------------------------------
+# Used to describe brand in marketing materials, social content, and reports.
+# Skills use these to describe the visual style; they don't render CSS.
+
+colors:
+  primary: "#[XXXXXX]"          # Main brand color — used in headers, CTAs, accent elements
+  secondary: "#[XXXXXX]"        # Supporting color — used in subheadings, backgrounds
+  accent: "#[XXXXXX]"           # Highlight/pop color — used sparingly for emphasis
+  text_primary: "#[XXXXXX]"     # Main body text color (typically near-black, e.g., "#1F1F1F")
+  text_light: "#[XXXXXX]"       # Text on dark backgrounds (typically white or near-white)
+  background: "#[XXXXXX]"       # Primary background (typically white or off-white, e.g., "#FFFFFF")
+  background_secondary: "#[XXXXXX]"  # Secondary background for sections/cards
+
+  # Color descriptions — used when skills describe visual style in words
+  primary_name: "[e.g., Navy Blue]"    # Human-readable name for primary color
+  secondary_name: "[e.g., Gold]"       # Human-readable name for secondary color
+
+# -----------------------------------------------------------------------------
+# TYPOGRAPHY
+# -----------------------------------------------------------------------------
+
+fonts:
+  heading:
+    family: "[Font Name]"              # e.g., "Playfair Display", "Montserrat", "Georgia"
+    weight: "700"                      # Font weight: 400 | 600 | 700 | 800
+    style: "normal"                    # normal | italic
+    fallback: "Georgia, serif"         # Web-safe fallback
+  body:
+    family: "[Font Name]"              # e.g., "Open Sans", "Lato", "Source Sans Pro"
+    weight: "400"
+    style: "normal"
+    fallback: "Arial, sans-serif"
+  accent:                              # Optional — for captions, labels, quotes
+    family: "[Font Name]"
+    weight: "400"
+    style: "italic"
+
+# -----------------------------------------------------------------------------
+# LOGO AND VISUAL ASSETS
+# -----------------------------------------------------------------------------
+
+logos:
+  # Paths relative to agent's Google Drive root folder
+  agent_primary: "[Brand Assets/logo-primary.png]"       # Full-color logo on white
+  agent_white: "[Brand Assets/logo-white.png]"           # White/reversed for dark backgrounds
+  agent_square: "[Brand Assets/logo-square.png]"         # Square crop for social profiles
+  brokerage: "[Brand Assets/brokerage-logo.png]"         # Brokerage logo (for co-branding)
+
+  # Usage notes
+  min_size_px: 120                    # Minimum logo display width in pixels
+  clear_space: "10% of logo width"    # Minimum clear space around logo
+
+headshot:
+  primary: "[Brand Assets/headshot-primary.jpg]"         # Professional headshot
+  casual: "[Brand Assets/headshot-casual.jpg]"           # Optional — more relaxed photo
+  description: >
+    [Brief description of headshot style for alt text and social posts.
+    Example: "Professional headshot, dark blazer, warm smile, white background."]
+
+# -----------------------------------------------------------------------------
+# MESSAGING
+# -----------------------------------------------------------------------------
+
+tagline: "[Agent's personal tagline]"
+  # Examples:
+  # "Your Central Indiana Home Expert"
+  # "Helping Hamilton County Families Come Home"
+  # "Straight Talk. Better Results."
+
+value_proposition: >
+  [1-2 sentence statement of unique value. This is used in listing presentations,
+  buyer presentations, and marketing materials. Should be specific, not generic.
+  Example: "I combine hyperlocal Hamilton County market knowledge with a
+  no-pressure approach that helps sellers net more and buyers find the right home —
+  not just any home."]
+
+unique_selling_points:
+  # 3-5 differentiators used in presentations and marketing
+  - "[e.g., Over 200 closed transactions in Hamilton County]"
+  - "[e.g., Average days on market 12% below county average]"
+  - "[e.g., 97% list-to-sale price ratio over past 24 months]"
+  - "[e.g., Dedicated transaction coordinator on every file]"
+  - "[e.g., 24-hour response guarantee to all client communications]"
+
+# -----------------------------------------------------------------------------
+# SOCIAL MEDIA
+# -----------------------------------------------------------------------------
+
+hashtags:
+  branded:                            # Agent-specific hashtags — always include on posts
+    - "#[AgentNameRealtor]"           # e.g., "#JaneSmithRealtor"
+    - "#[CityExpert]"                  # e.g., "#CarmelHomeExpert"
+  market_specific:                    # Geographic hashtags for discovery
+    - "#CentralIndianaRealEstate"
+    - "#[PrimaryCity]Homes"           # e.g., "#CarmelHomes"
+    - "#[PrimaryCity]RealEstate"      # e.g., "#CarmelRealEstate"
+    - "#IndianaRealtor"
+  content_type:                       # Content category hashtags
+    - "#JustListed"
+    - "#OpenHouse"
+    - "#ForSale"
+    - "#HomeForSale"
+    - "#RealEstate"
+    - "#HousingMarket"
+    - "#MovingToIndiana"
+  limit_per_post: 10                  # Maximum hashtags on any single post
+
+# -----------------------------------------------------------------------------
+# LEGAL AND COMPLIANCE
+# -----------------------------------------------------------------------------
+
+compliance:
+  # This text must appear on all marketing materials per brokerage and Indiana law
+  brokerage_disclaimer: >
+    [Agent Name] is a licensed REALTOR® with [Brokerage Name], a licensed Indiana
+    real estate brokerage. Equal Housing Opportunity.
+
+  # Short version for social media where space is limited
+  brokerage_disclaimer_short: >
+    [Brokerage Name] | Licensed in Indiana | Equal Housing Opportunity
+
+  equal_housing_logo: true            # Include EHO logo on print materials
+  mls_attribution: true               # Include "Data from BLC/MIBOR" when sharing market data
+  mibor_disclaimer: >
+    Market data provided by the Metropolitan Indianapolis Board of REALTORS® (MIBOR).
+    Information deemed reliable but not guaranteed.
+
+  cma_disclaimer: >
+    This comparative market analysis is not an appraisal and should not be used as
+    a substitute for a licensed appraisal. Values are estimates based on comparable
+    sales and market conditions.
+
+  # Fair Housing statement (full version for presentations)
+  fair_housing_statement: >
+    We are pledged to the letter and spirit of the U.S. Policy for the Achievement of
+    Equal Housing Opportunity throughout the Nation. We encourage and support an affirmative
+    advertising and marketing program in which there are no barriers to obtaining housing
+    because of race, color, religion, sex, handicap, familial status, or national origin.

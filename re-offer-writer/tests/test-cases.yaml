@@ -1,0 +1,314 @@
+---
+# re-offer-writer Test Cases
+# 16 cases across 7 categories
+
+test_suite: re-offer-writer
+version: "1.0"
+last_updated: "2026-03-30"
+
+categories:
+  - config-loading
+  - buyer-offer-strategy
+  - contingency-handling
+  - escalation-clauses
+  - seller-offer-review
+  - counteroffer
+  - disclaimer-compliance
+
+tests:
+
+  # -----------------------------------------------------------------------
+  # CONFIG LOADING
+  # -----------------------------------------------------------------------
+
+  - id: tc-001
+    name: "Load valid agent config before generating offer strategy"
+    category: config-loading
+    priority: high
+    tags: [config, setup, agent-profile]
+    input:
+      prompt: "/re-offer-writer buyer offer, Fishers listing $338K. Slug: sarah-jones-fc-tucker"
+      context: "All config files exist for sarah-jones-fc-tucker"
+    assertions:
+      - "Skill loads agent-profile.yaml before producing any offer guidance"
+      - "Skill loads market-areas.yaml for submarket context"
+      - "Agent name appears in the output — not a generic placeholder"
+
+  - id: tc-002
+    name: "Mode identification — buyer vs seller correctly parsed"
+    category: config-loading
+    priority: high
+    tags: [mode-detection, buyer, seller]
+    input:
+      prompt: "/re-offer-writer seller received 3 offers on 4218 Buttonwood Dr. Slug: sarah-jones-fc-tucker"
+      context: "Agent is the listing agent reviewing incoming offers"
+    assertions:
+      - "Skill identifies SELLER MODE from the prompt"
+      - "Skill generates an offer comparison output, not a buyer offer strategy"
+      - "Skill does not mix buyer and seller guidance in the output"
+
+  # -----------------------------------------------------------------------
+  # BUYER OFFER STRATEGY
+  # -----------------------------------------------------------------------
+
+  - id: tc-003
+    name: "Competitive market offer — above list price recommended"
+    category: buyer-offer-strategy
+    priority: high
+    tags: [offer-price, competitive-market, sellers-market]
+    input:
+      prompt: >
+        /re-offer-writer buyer offer — 4218 Buttonwood Dr, Fishers $338K list,
+        6 days on market, listing agent says high activity, CMA $335K–$345K.
+        Conventional, $360K pre-approved. Slug: sarah-jones-fc-tucker
+      context: "Active seller's market; multiple offers likely"
+    assertions:
+      - "Recommended offer price is at or above list price"
+      - "Rationale references market conditions (short DOM, high activity)"
+      - "Output does not recommend below-list in this market context"
+      - "Earnest money recommendation falls in the 2–3% range for this competitive context"
+
+  - id: tc-004
+    name: "Buyer's market offer — below list price with rationale"
+    category: buyer-offer-strategy
+    priority: high
+    tags: [offer-price, buyers-market, stale-listing]
+    input:
+      prompt: >
+        /re-offer-writer buyer offer — 3902 S Meridian St, list $264,900,
+        78 days on market, one price reduction, vacant property.
+        Agent CMA: $248K–$258K. Conventional, 5% down. Slug: mike-wright-compass
+      context: "Stale listing in buyer's market; seller is motivated investor"
+    assertions:
+      - "Recommended offer price is below current list price"
+      - "Rationale mentions 78 DOM and price reduction as supporting factors"
+      - "Offer strategy does not waive any contingencies (buyer's market — no need)"
+      - "Earnest money recommendation is 1% appropriate for this market"
+
+  - id: tc-005
+    name: "Cash offer strategy — premium justified"
+    category: buyer-offer-strategy
+    priority: high
+    tags: [cash-offer, luxury, competitive]
+    input:
+      prompt: >
+        /re-offer-writer cash offer, Carmel listing $875K, 4 days on market,
+        other offer confirmed, H&B called. Buyer has cash POF.
+        CMA: $855K–$930K. Slug: sarah-jones-fc-tucker
+      context: "Cash buyer in luxury multiple-offer situation"
+    assertions:
+      - "Offer price recommendation is above list price or at the strong end of CMA range"
+      - "Skill explains the cash premium (no appraisal risk, no lender delay)"
+      - "No financing or appraisal contingency in the strategy (cash purchase)"
+      - "Earnest money recommendation is higher than standard (3–4% for luxury)"
+      - "Skill notes that POF should be submitted with the offer"
+
+  - id: tc-006
+    name: "Buyer pre-approval ceiling respected in offer strategy"
+    category: buyer-offer-strategy
+    priority: high
+    tags: [pre-approval, ceiling, financial-guardrail]
+    input:
+      prompt: >
+        /re-offer-writer buyer offer — $350,000 list, buyer pre-approved at $355K,
+        agent's CMA says $348K–$358K, market is competitive.
+        Slug: sarah-jones-fc-tucker
+      context: "Offer ceiling near pre-approval limit"
+    assertions:
+      - "Recommended offer price does not exceed the buyer's $355K pre-approval without flagging the risk"
+      - "If escalation clause is suggested, ceiling is at or below $355K"
+      - "Skill notes the proximity to the pre-approval limit explicitly"
+      - "Skill does not recommend the buyer offer beyond what their lender approved"
+
+  # -----------------------------------------------------------------------
+  # CONTINGENCY HANDLING
+  # -----------------------------------------------------------------------
+
+  - id: tc-007
+    name: "Inspection contingency — never silently waived"
+    category: contingency-handling
+    priority: high
+    tags: [inspection, contingency, waiver-risk]
+    input:
+      prompt: >
+        /re-offer-writer buyer offer — competitive market, seller wants clean offer,
+        is there any way to strengthen without raising the price?
+        Slug: sarah-jones-fc-tucker
+      context: "Agent asking about ways to strengthen offer without increasing price"
+    assertions:
+      - "Skill presents inspection period shortening as an option (7 days) before recommending waiver"
+      - "If waiving inspection is suggested, skill explicitly states the risk to buyer"
+      - "Skill does not recommend waiving inspection as a default without buyer instruction context"
+      - "Skill explains pre-inspection as a safer alternative to waiving"
+
+  - id: tc-008
+    name: "Financing contingency not waived for financed buyer"
+    category: contingency-handling
+    priority: high
+    tags: [financing-contingency, waiver, earnest-money-risk]
+    input:
+      prompt: >
+        /re-offer-writer buyer offer — should we waive the financing contingency
+        to strengthen our offer? Buyer has conventional loan, good pre-approval.
+        Slug: sarah-jones-fc-tucker
+      context: "Agent asking if they should waive financing contingency for financed buyer"
+    assertions:
+      - "Skill advises against waiving financing contingency for a buyer who is financing the purchase"
+      - "Skill explains that waiving puts buyer's earnest money at risk if loan fails"
+      - "Skill suggests shortening the financing contingency period (14 days) as a safer alternative"
+      - "Skill does not provide a template for waiving financing contingency without warning"
+
+  - id: tc-009
+    name: "Appraisal gap coverage explained clearly with cash-at-close math"
+    category: contingency-handling
+    priority: high
+    tags: [appraisal-gap, gap-coverage, cash-at-close]
+    input:
+      prompt: >
+        /re-offer-writer buyer offer — competitive Carmel listing $515K, seller
+        wants appraisal gap coverage. Buyer has 10% down, can cover up to $10K gap.
+        Slug: sarah-jones-fc-tucker
+      context: "Seller is requesting appraisal gap coverage in a competitive market"
+    assertions:
+      - "Skill drafts appraisal gap coverage language with a specific dollar ceiling ($10,000)"
+      - "Skill calculates what the cash-at-close would be if the gap is triggered"
+      - "Skill never suggests unlimited gap coverage without a ceiling"
+      - "Skill explains what the gap means in plain English for the buyer"
+
+  - id: tc-010
+    name: "Home sale contingency — kick-out clause explained to seller"
+    category: contingency-handling
+    priority: medium
+    tags: [home-sale-contingency, kick-out, seller-side]
+    input:
+      prompt: >
+        /re-offer-writer seller received offer with home sale contingency.
+        Buyer must sell their Greenwood home first. Should seller accept?
+        Slug: lisa-chen-kw
+      context: "Listing agent advising seller on whether to accept contingent offer"
+    assertions:
+      - "Skill explains the home sale contingency mechanics clearly"
+      - "Skill presents the kick-out clause as the standard way to accept while protecting seller"
+      - "Skill explains that kick-out typically gives buyer 48–72 hours to remove contingency"
+      - "Skill presents alternatives: reject and wait for non-contingent; counter with kick-out only"
+      - "Skill does not recommend accepting a contingent offer without mentioning the kick-out"
+
+  # -----------------------------------------------------------------------
+  # ESCALATION CLAUSES
+  # -----------------------------------------------------------------------
+
+  - id: tc-011
+    name: "Escalation clause draft is complete and enforceable"
+    category: escalation-clauses
+    priority: high
+    tags: [escalation, draft-language, multiple-offers]
+    input:
+      prompt: >
+        /re-offer-writer escalation clause — base price $338K, increment $2K,
+        ceiling $352K. Multiple offers confirmed. Slug: sarah-jones-fc-tucker
+      context: "Agent needs draft escalation clause language"
+    assertions:
+      - "Output includes complete draft escalation language with all four components: base, increment, ceiling, documentation requirement"
+      - "Documentation requirement states seller must provide copy of competing offer"
+      - "Draft language includes 'bona fide written offer' language (not verbal)"
+      - "Ceiling is clearly stated in the draft language"
+      - "Skill notes that ceiling is above agent's CMA high and flags potential appraisal gap"
+
+  # -----------------------------------------------------------------------
+  # SELLER OFFER REVIEW
+  # -----------------------------------------------------------------------
+
+  - id: tc-012
+    name: "Multiple offer comparison includes net-to-seller calculation"
+    category: seller-offer-review
+    priority: high
+    tags: [multiple-offers, comparison, net-to-seller]
+    input:
+      prompt: >
+        /re-offer-writer seller received 3 offers: (1) $442K conv 10% down, no concessions;
+        (2) $450K FHA, $4K CC assistance; (3) $435K cash, no concessions.
+        List price $429K. Slug: lisa-chen-kw
+      context: "Listing agent presenting offers to seller"
+    assertions:
+      - "Output includes a side-by-side comparison table for all three offers"
+      - "Net-to-seller calculation subtracts concessions (Offer 2 nets less due to $4K CC)"
+      - "Financing type is explained in plain English (cash vs FHA implications)"
+      - "Skill does not recommend one offer as definitively 'best' without context"
+      - "Strength ratings or equivalent are included for each offer"
+
+  - id: tc-013
+    name: "Seller receives FHA offer — MRP risk flagged"
+    category: seller-offer-review
+    priority: medium
+    tags: [FHA, MPR, appraisal, seller-side]
+    input:
+      prompt: >
+        /re-offer-writer seller received FHA offer on older 1960s ranch. Property
+        has some visible deferred maintenance — peeling exterior paint, older HVAC.
+        Slug: mike-wright-compass
+      context: "FHA offer on property that may have condition issues"
+    assertions:
+      - "Skill flags that FHA appraisals include a health/safety inspection component"
+      - "Skill notes that peeling exterior paint is an FHA flag (lead paint era property)"
+      - "Skill notes that older HVAC may be flagged if it's non-functional or inadequate"
+      - "Skill recommends seller address flagged items before FHA appraisal or price accordingly"
+
+  # -----------------------------------------------------------------------
+  # COUNTEROFFER
+  # -----------------------------------------------------------------------
+
+  - id: tc-014
+    name: "Counteroffer draft includes all modified and unchanged terms"
+    category: counteroffer
+    priority: high
+    tags: [counteroffer, IAR-counter, seller-side]
+    input:
+      prompt: >
+        /re-offer-writer counteroffer — buyer offered $415K, seller wants $425K,
+        no CC assistance (buyer asked for $3K), all other terms same. Expires 24 hrs.
+        Slug: lisa-chen-kw
+      context: "Listing agent drafting a counter to a below-ask offer"
+    assertions:
+      - "Counter specifies purchase price as $425,000"
+      - "Counter removes the $3,000 closing cost assistance request"
+      - "Counter states all other terms remain unchanged"
+      - "Counter includes an expiration date/time (24 hours or agent-specified)"
+      - "Output is formatted to be transferred to IAR Counter Proposal form — not a complete contract"
+      - "Skill does not present the counter as a signed acceptance"
+
+  - id: tc-015
+    name: "Simultaneous counter correctly warns about multiple acceptance risk"
+    category: counteroffer
+    priority: high
+    tags: [counteroffer, simultaneous, multiple-offers, liability]
+    input:
+      prompt: >
+        /re-offer-writer simultaneous counteroffer to 2 buyers — seller wants to
+        send counter to both Offer 1 and Offer 2 at the same time. Slug: lisa-chen-kw
+      context: "Seller wants to counter two buyers simultaneously"
+    assertions:
+      - "Skill includes the critical 'multiple simultaneous counter' language warning"
+      - "Draft counter includes explicit language that first executed counter returned is the acceptance"
+      - "Skill warns that failing to include this language could create two simultaneous contracts"
+      - "Skill recommends agent consult managing broker before executing simultaneous counters"
+
+  # -----------------------------------------------------------------------
+  # DISCLAIMER COMPLIANCE
+  # -----------------------------------------------------------------------
+
+  - id: tc-016
+    name: "Legal disclaimer present — offer output is guidance only, not a contract"
+    category: disclaimer-compliance
+    priority: high
+    tags: [disclaimer, legal, contract, Dotloop, ZipForms]
+    input:
+      prompt: >
+        /re-offer-writer complete buyer offer strategy for Fishers home.
+        Slug: sarah-jones-fc-tucker
+      context: "Any complete offer output"
+    assertions:
+      - "Output includes a statement that this is guidance and draft language only"
+      - "Output instructs agent to transfer to Dotloop, ZipForms, or BLC — not to use output as contract"
+      - "Standard legal disclaimer appears (consult managing broker / Indiana attorney)"
+      - "Output does not claim to create a legally binding offer"
+      - "Personal letter guidance includes fair housing compliance note (no protected class info)"

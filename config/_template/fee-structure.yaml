@@ -1,0 +1,124 @@
+# =============================================================================
+# FEE STRUCTURE — Central Indiana Real Estate Agent Plugin
+# =============================================================================
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# SENSITIVE — NEVER share this file with clients or include in client-facing
+# output. For internal agent/skill use only.
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+# Loaded by: re-cma (net sheet calculation), re-seller-consultation,
+# re-buyer-consultation, re-offer-writer.
+#
+# POST-NAR SETTLEMENT CONTEXT (effective August 2024):
+# - Sellers no longer required to offer buyer broker compensation in MLS
+# - Buyer broker compensation must be disclosed and agreed upon in writing
+# - Agents must NOT represent that buyer broker compensation is standard or fixed
+# - This file captures agent's defaults — not industry-wide standards
+# - Compensation is always negotiable
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# LISTING SIDE (SELLER REPRESENTATION)
+# -----------------------------------------------------------------------------
+
+listing:
+  commission:
+    default_percent: [X.X]          # Agent's standard listing commission (%)
+                                     # This is the agent's side ONLY — buyer side separate
+    minimum_percent: [X.X]           # Minimum acceptable commission (%)
+    flat_fee_option: false           # Does agent offer flat-fee listing? true/false
+    flat_fee_amount: null            # If flat_fee_option: true, set dollar amount
+
+  admin_fee:
+    enabled: false                   # Some agents charge a transaction administration fee
+    amount: null                     # Dollar amount if enabled (e.g., 395)
+    description: null                # e.g., "Transaction coordination fee"
+    when_charged: null               # "at close" | "upon listing"
+
+  cancellation_policy: >
+    [Describe the agent's cancellation policy. Example: "If seller cancels the listing
+    agreement without cause after marketing begins, a cancellation fee equal to documented
+    marketing expenses may apply. Consult listing agreement for terms." Or simply:
+    "Per listing agreement terms — generally no fee if cancelled within first 72 hours."]
+
+  minimum_price: null                # Minimum property price agent will list (optional)
+                                     # e.g., 150000 means $150,000
+
+# -----------------------------------------------------------------------------
+# BUYER SIDE (BUYER REPRESENTATION)
+# -----------------------------------------------------------------------------
+
+buyer:
+  compensation:
+    default_percent: [X.X]           # Default buyer broker compensation (%)
+    minimum_percent: [X.X]           # Minimum acceptable (%)
+
+  agreement:
+    type: "exclusive"                # "exclusive" | "non-exclusive"
+    duration_days: 90                # Standard buyer agreement duration in days
+    # NAR settlement: written buyer agreement required before showing property
+    # Must specify: services provided, compensation amount, that compensation
+    # is negotiable and not set by law, association, or MLS
+
+    # How agent handles seller-offered compensation:
+    # If seller offers buyer compensation ≥ agent's minimum, agent may accept it.
+    # If seller offers less, buyer may pay the difference. Always disclose in writing.
+    compensation_source_policy: >
+      [Describe how agent handles compensation. Example: "Agent's compensation is
+      specified in the Buyer Agency Agreement. If the seller offers buyer broker
+      compensation that meets or exceeds the agreed amount, it will be applied to
+      reduce the buyer's out-of-pocket compensation. If seller offers less, buyer
+      will be responsible for the difference as specified in the agreement."]
+
+  rebate_policy: >
+    [Optional: describe any buyer rebate policy. Leave blank or set to null
+    if agent does not offer rebates.]
+
+# -----------------------------------------------------------------------------
+# REFERRAL FEES
+# -----------------------------------------------------------------------------
+
+referrals:
+  # Fees for referring out or receiving referrals from other agents
+  # These are subject to brokerage policies and Indiana Real Estate Commission rules
+
+  outgoing_standard_percent: 25      # % paid to referring agent for referrals sent out
+  incoming_standard_percent: 25      # % charged by referring agent for referrals received
+
+  relocation_percent: 35             # Relocation company referral fee (%) — industry standard
+
+  notes: >
+    All referral fees are subject to brokerage review and approval. Payment only to
+    licensed brokers. Document all referral agreements in writing.
+
+# -----------------------------------------------------------------------------
+# TEAM SPLITS (if applicable)
+# -----------------------------------------------------------------------------
+# Only relevant if agent leads a team. Remove if solo agent.
+
+team_splits:
+  enabled: false                     # Set to true if agent operates a team
+
+  # If team is enabled, define splits below
+  splits:
+    # listing_agent_split: 0.60      # % of gross commission retained by listing agent
+    # buyer_agent_split: 0.50        # % retained by buyer agent on team
+    # tc_fee: 395                    # TC fee deducted from gross before split
+    # brokerage_cap: null            # Brokerage cap amount if applicable (KW, EXP models)
+
+# -----------------------------------------------------------------------------
+# BROKERAGE FEES
+# -----------------------------------------------------------------------------
+# For skill reference — brokerage takes its split before agent net
+
+brokerage:
+  model: "split"                     # "split" | "cap" | "flat_fee" | "100_percent"
+  split_percent: null                # e.g., 30 means brokerage takes 30%
+  cap_amount: null                   # Annual cap amount (KW/EXP model) — set to dollar amount
+  monthly_fee: null                  # Monthly desk fee if applicable
+  e_and_o_fee: null                  # E&O insurance contribution per transaction
+
+  notes: >
+    [Optional notes on brokerage fee structure relevant to net sheet calculations.
+    Example: "After hitting annual cap, agent keeps 100% minus $300/transaction
+    royalty fee and E&O."]

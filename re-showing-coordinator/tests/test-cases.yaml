@@ -1,0 +1,272 @@
+---
+# re-showing-coordinator Test Cases
+# 14 cases across 6 categories
+
+test_suite: re-showing-coordinator
+version: "1.0"
+last_updated: "2026-03-30"
+
+categories:
+  - config-loading
+  - listing-setup
+  - listing-feedback
+  - buyer-tour
+  - buyer-comparison
+  - edge-cases
+
+tests:
+
+  # -----------------------------------------------------------------------
+  # CONFIG LOADING
+  # -----------------------------------------------------------------------
+
+  - id: tc-001
+    name: "Load valid agent config on startup"
+    category: config-loading
+    priority: high
+    tags: [config, setup, agent-profile]
+    input:
+      prompt: "Set up ShowingTime instructions for 12345 Maple Creek Dr, Fishers — slug: jane-smith-fc-tucker"
+      context: "All config files exist for jane-smith-fc-tucker"
+    assertions:
+      - "Skill loads agent-profile.yaml before generating any content"
+      - "Skill loads team-structure.yaml to identify if showing assistant handles coordination"
+      - "Agent name and brokerage appear in output — no generic placeholders"
+
+  - id: tc-002
+    name: "Missing config redirects to re-agent-setup"
+    category: config-loading
+    priority: high
+    tags: [config, error-handling, setup]
+    input:
+      prompt: "Showing report for my listing at 4218 Buttonwood Dr — slug: unknown-xyz"
+      context: "No config exists for unknown-xyz"
+    assertions:
+      - "Skill does not generate any showing content without a loaded config"
+      - "Skill states it cannot find config for that slug"
+      - "Skill directs agent to run /re-agent-setup"
+
+  # -----------------------------------------------------------------------
+  # LISTING SETUP
+  # -----------------------------------------------------------------------
+
+  - id: tc-003
+    name: "ShowingTime setup sheet includes all required fields"
+    category: listing-setup
+    priority: high
+    tags: [showingtime, listing-setup, access-instructions]
+    input:
+      prompt: >
+        Set up ShowingTime for 12345 Maple Creek Dr, Fishers — owner-occupied,
+        lockbox on front door handle, 1-hour notice required, no showings before 9am
+        or after 7pm, small dog in crate, please remove shoes.
+      context: "Valid config loaded"
+    assertions:
+      - "Output includes: address, access method (lockbox location), notice requirement, allowed hours, pet instructions, shoe policy"
+      - "Format is clean and suitable for pasting into ShowingTime"
+      - "Output notes that alarm codes go in ShowingTime agent notes only — never in BLC public remarks"
+      - "Feedback request is recommended to be set to automatic"
+
+  - id: tc-004
+    name: "Tenant-occupied listing triggers notice-to-tenant reminder"
+    category: listing-setup
+    priority: high
+    tags: [tenant-occupied, indiana-law, showing-notice]
+    input:
+      prompt: >
+        ShowingTime setup for 7834 Oak St, Indianapolis — tenant-occupied,
+        month-to-month lease, lockbox in key safe on door. 24-hour notice.
+      context: "Valid config loaded"
+    assertions:
+      - "Skill notes that Indiana law requires reasonable advance notice to tenants before entry"
+      - "Skill recommends agent confirm proper notice was given before confirming the showing"
+      - "Output does not disclose tenant's identity or private tenant information"
+
+  - id: tc-005
+    name: "Sensitive access info not placed in public remarks"
+    category: listing-setup
+    priority: high
+    tags: [security, access-codes, blc-compliance]
+    input:
+      prompt: >
+        ShowingTime setup for vacant listing. Alarm code is 4812.
+        Lockbox combination is 3344. Put these in the listing remarks so agents can find them.
+      context: "Valid config loaded"
+    assertions:
+      - "Skill refuses to recommend putting alarm or lockbox codes in BLC public remarks"
+      - "Skill explains that codes go in ShowingTime agent notes (private, agent-only field)"
+      - "Output provides correct guidance on where access codes should be stored"
+
+  # -----------------------------------------------------------------------
+  # LISTING FEEDBACK
+  # -----------------------------------------------------------------------
+
+  - id: tc-006
+    name: "Feedback request template is professional, specific, and non-generic"
+    category: listing-feedback
+    priority: high
+    tags: [feedback, listing-side, agent-communication]
+    input:
+      prompt: "Write a showing feedback request for 4218 Buttonwood Dr, Fishers after a showing today."
+      context: "Valid config loaded with professional-friendly tone"
+    assertions:
+      - "Email subject line includes property address"
+      - "Template includes 3 specific feedback questions (not just 'what did you think')"
+      - "One question addresses price perception"
+      - "One question addresses condition concerns"
+      - "One question asks for buyer interest level (e.g., 1–5 scale)"
+      - "Agent signature from agent-profile.yaml used in closing"
+
+  - id: tc-007
+    name: "Feedback analysis identifies price concern pattern and recommends action"
+    category: listing-feedback
+    priority: high
+    tags: [feedback-analysis, pricing, seller-communication]
+    input:
+      prompt: >
+        Analyze feedback for 4218 Buttonwood Dr, $389,000. 9 showings, 5 feedback responses.
+        3 agents said price is high, 1 said kitchen needs updating, 1 said interested but still looking.
+      context: "Valid config loaded"
+    assertions:
+      - "Skill identifies price concern as the dominant theme (3 of 5 responses)"
+      - "Skill does NOT minimize or sugarcoat the negative feedback pattern"
+      - "Skill recommends initiating a price reduction conversation with the seller"
+      - "Skill provides agent talking points for the price conversation"
+      - "Skill notes that kitchen concern (1 response) is secondary and may not warrant action alone"
+
+  - id: tc-008
+    name: "Weekly seller report uses weekly-status-update.md template structure"
+    category: listing-feedback
+    priority: medium
+    tags: [seller-report, weekly-update, template]
+    input:
+      prompt: >
+        Weekly showing report for 4218 Buttonwood Dr — listed 14 days, 9 showings,
+        5 feedback responses. Feedback: 3 price high, 1 kitchen concern, 2 still looking.
+      context: "Valid config loaded"
+    assertions:
+      - "Report includes: showings this week, total to date, feedback count and response rate"
+      - "Report includes feedback themes summarized clearly"
+      - "Report includes market context (compare to typical DOM at this price range)"
+      - "Report includes agent's read / interpretation"
+      - "Report includes specific next action item for seller and agent"
+      - "Agent name and brokerage appear in the report"
+
+  # -----------------------------------------------------------------------
+  # BUYER TOUR
+  # -----------------------------------------------------------------------
+
+  - id: tc-009
+    name: "Tour prep sheet addresses buyer's stated criteria per property"
+    category: buyer-tour
+    priority: high
+    tags: [buyer-side, tour-prep, criteria-matching]
+    input:
+      prompt: >
+        Buyer tour prep for Tom and Janet Chen — want 4BR, HSE or Carmel Clay schools,
+        big kitchen, main-floor primary if possible, $450-550K. Seeing 3 homes tomorrow
+        in Carmel. Home 1: 4BR/3BA, CCS, 2,800 sqft, $499K. Home 2: 4BR/2.5BA, HSE, 2,600 sqft,
+        $469K, updated kitchen. Home 3: 5BR/3.5BA, CCS, 3,100 sqft, $539K.
+      context: "Valid config loaded"
+    assertions:
+      - "Each of the 3 homes gets a dedicated prep sheet"
+      - "Each prep sheet identifies which of Tom and Janet's criteria the home meets"
+      - "Each prep sheet flags things to evaluate in person (e.g., is the primary on the main floor?)"
+      - "Tour includes a recommended showing order"
+      - "Tour includes estimated time per showing plus travel buffer"
+
+  - id: tc-010
+    name: "No fabricated urgency in buyer follow-up sequence"
+    category: buyer-tour
+    priority: high
+    tags: [buyer-follow-up, urgency, ethics]
+    input:
+      prompt: >
+        Buyer Sarah Brown saw 4218 Buttonwood Dr 2 days ago and hasn't decided yet.
+        Generate a follow-up sequence. Note: 9 showings but no other offers.
+      context: "Valid config loaded. No actual competing offers."
+    assertions:
+      - "Sequence does not claim 'multiple offers are coming' or 'this will be gone soon'"
+      - "Sequence does not fabricate a competing buyer or pending offer situation"
+      - "Any urgency mentioned is tied to real data (days on market, showing velocity)"
+      - "Sequence is supportive and non-pressuring across all 3 touches"
+      - "Touch 1 (same day) is brief and low-pressure"
+      - "Touch 3 (1 week) opens the door for a new direction if buyer has moved on"
+
+  # -----------------------------------------------------------------------
+  # BUYER COMPARISON
+  # -----------------------------------------------------------------------
+
+  - id: tc-011
+    name: "Side-by-side comparison worksheet includes gut reaction prompts and decision framework"
+    category: buyer-comparison
+    priority: high
+    tags: [buyer-side, comparison-worksheet, decision-framework]
+    input:
+      prompt: >
+        Comparison worksheet for Tom and Janet — they saw 6 homes, love two:
+        7814 Oak Hill Ct, Noblesville ($415K, 4BR, HSE, needs cosmetic work) and
+        3301 Willow Bend Dr, Fishers ($439K, 4BR, HSE, move-in ready).
+      context: "Valid config loaded"
+    assertions:
+      - "Worksheet includes both properties with price, specs, and condition summary"
+      - "Worksheet includes pros and cons column for each property"
+      - "Worksheet includes a gut reaction / urgency prompt (e.g., 'If this went under contract tonight...')"
+      - "Worksheet quantifies the $24K price difference in monthly payment context"
+      - "Decision framework identifies any dealbreakers in either concern column"
+      - "Agent receives a script for guiding the decision conversation"
+
+  # -----------------------------------------------------------------------
+  # EDGE CASES
+  # -----------------------------------------------------------------------
+
+  - id: tc-012
+    name: "Low showing volume triggers diagnostic, not immediate price reduction"
+    category: edge-cases
+    priority: high
+    tags: [low-showing-volume, diagnostic, listing-side]
+    input:
+      prompt: >
+        Only 3 showings in 3 weeks at 10 Lincoln Court, Westfield, $529K.
+        Home is staged and well-photographed. What should I do?
+      context: "Valid config loaded"
+    assertions:
+      - "Skill provides a multi-cause diagnostic (price, marketing reach, access friction, syndication, market conditions)"
+      - "Skill does NOT jump immediately to 'reduce the price' without exploring other causes"
+      - "Skill provides prioritized action steps"
+      - "One action step involves checking if showing notice requirement is too restrictive"
+      - "One action step involves verifying syndication is live on Zillow/Realtor.com"
+
+  - id: tc-013
+    name: "Investor showing checklist includes financial evaluation framework"
+    category: edge-cases
+    priority: medium
+    tags: [investor, multi-family, evaluation-framework]
+    input:
+      prompt: >
+        Showing an investment SFH to an investor buyer — tenant-occupied, Fountain Square Indy.
+        Current rent $1,200/mo, $299K list price. Help me prep for this showing.
+      context: "Valid config loaded"
+    assertions:
+      - "Pre-showing checklist includes confirming tenant notice was given"
+      - "Evaluation framework includes gross rent multiplier calculation"
+      - "Evaluation framework includes estimated repair/deferred maintenance assessment"
+      - "Post-showing debrief questions include rent-to-price ratio and tenant quality signals"
+      - "Skill does NOT make representations about tenant character — observable condition only"
+
+  - id: tc-014
+    name: "Virtual showing prep includes walkthrough narration checklist"
+    category: edge-cases
+    priority: medium
+    tags: [virtual-showing, out-of-town-buyer, remote]
+    input:
+      prompt: >
+        Doing FaceTime showings for out-of-town buyers relocating from Chicago.
+        3 properties in Carmel this weekend. Buyers can't come in person until under contract.
+      context: "Valid config loaded"
+    assertions:
+      - "Per-property checklist includes items to demonstrate on camera vs. narrate verbally"
+      - "Checklist includes items to assess on behalf of absent buyers (HVAC age, sump pump, roof visibility, moisture signs)"
+      - "Skill recommends recording video for buyers to review later"
+      - "Post-tour workflow includes same comparison worksheet and decision framework as in-person"
+      - "Skill sets realistic expectations about limitations of virtual tours"

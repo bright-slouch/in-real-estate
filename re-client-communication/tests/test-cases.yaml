@@ -1,0 +1,302 @@
+# Test Cases: re-client-communication
+# Format: id, name, category, priority, tags, input, assertions
+# Cross-references re-agent-setup test structure
+
+skill: re-client-communication
+
+test_cases:
+
+  # =============================================================================
+  # CONFIG LOADING — Agent identification and voice profile loading
+  # =============================================================================
+
+  - id: tc-001
+    name: "Config loaded by slug — voice fields extracted"
+    category: config-loading
+    priority: high
+    tags: [config-loading, voice-personalization]
+    input:
+      prompt: "Email to seller after 14 days with no offers"
+      context: "Agent slug provided: marcus-williams-kw-indy-metro-n"
+    assertions:
+      - "Skill loads agent-profile.yaml from config/marcus-williams-kw-indy-metro-n/"
+      - "Skill loads email-templates.yaml from same config folder"
+      - "Output uses agent's greeting_style from config, not a generic greeting"
+      - "Output uses agent's closing_style from config, not a generic closing"
+      - "Signature block from email-templates.yaml appended to output"
+
+  - id: tc-002
+    name: "Config loaded by name lookup — Monday.com registry"
+    category: config-loading
+    priority: high
+    tags: [config-loading, agent-lookup]
+    input:
+      prompt: "Write a just-listed email for Marcus Williams"
+      context: "No slug provided; name only"
+    assertions:
+      - "Skill looks up 'Marcus Williams' in Monday.com Real Estate Agent Registry board"
+      - "Skill resolves slug from registry result"
+      - "Skill loads config from resolved slug path"
+      - "Skill does not proceed with a generic voice if slug cannot be resolved"
+
+  - id: tc-003
+    name: "Agent not found — directs to re-agent-setup"
+    category: config-loading
+    priority: high
+    tags: [config-loading, error-handling]
+    input:
+      prompt: "Write an email to my seller"
+      context: "Agent name: 'Unknown Agent XYZ' — not in registry"
+    assertions:
+      - "Skill reports agent not found in registry"
+      - "Skill directs user to run /re-agent-setup before continuing"
+      - "Skill does not produce a generic communication without agent config"
+
+  - id: tc-004
+    name: "Missing email-templates.yaml — skill handles gracefully"
+    category: config-loading
+    priority: medium
+    tags: [config-loading, error-handling, edge-case]
+    input:
+      prompt: "Email to buyer confirming showing"
+      context: "Agent config has agent-profile.yaml but email-templates.yaml is missing"
+    assertions:
+      - "Skill notes that email-templates.yaml is not found"
+      - "Skill still generates output using agent-profile.yaml voice settings"
+      - "Skill uses a constructed signature from agent-profile.yaml contact fields"
+      - "Skill recommends completing email-templates.yaml via re-agent-setup"
+
+  # =============================================================================
+  # EMAIL GENERATION — Subject line + body + signature
+  # =============================================================================
+
+  - id: tc-005
+    name: "Just-listed email — subject line and body"
+    category: email-generation
+    priority: high
+    tags: [email-generation, listing-side, output-format]
+    input:
+      prompt: "Write a just-listed email to my sphere for 14207 Allisonville Rd, Fishers — 4 bed, 2.5 bath, $429,000"
+      context: "Agent: marcus-williams-kw-indy-metro-n"
+    assertions:
+      - "Output includes a Subject: line"
+      - "Subject line contains property address or bedrooms and city"
+      - "Subject line contains list price"
+      - "Body opens with agent's greeting_style"
+      - "Body includes property address, bedrooms, bathrooms, and price"
+      - "Body includes a referral soft ask"
+      - "Body closes with agent's closing_style"
+      - "Signature block from email-templates.yaml appears after closing"
+      - "Output does not contain '[PLACEHOLDER]' style bracket text"
+
+  - id: tc-006
+    name: "Under contract email — buyer side"
+    category: email-generation
+    priority: high
+    tags: [email-generation, buyer-side, output-format]
+    input:
+      prompt: "Under contract email to buyers — 2847 Prairie Wind Dr Noblesville, $387,500, close date May 15, inspection ends April 12"
+      context: "Agent: david-park-c21-scheetz; buyers: the Okonkwo family"
+    assertions:
+      - "Output includes 'Subject:' line"
+      - "Subject line references 'under contract' or equivalent milestone language"
+      - "Body contains contract price, inspection deadline, and close date"
+      - "Body conveys celebratory tone appropriate to the milestone"
+      - "Signature block appended"
+      - "Fair housing language check passes — no demographic descriptors"
+
+  - id: tc-007
+    name: "Appraisal gap email — three options presented clearly"
+    category: email-generation
+    priority: high
+    tags: [email-generation, buyer-side, difficult-conversation]
+    input:
+      prompt: "Appraisal gap email to buyers on 5512 Copperleaf Ln, Zionsville — contract $612k, appraised at $597k"
+      context: "Agent: lisa-morales-fc-tucker"
+    assertions:
+      - "Output presents exactly three options to the buyer"
+      - "Option 1 explains covering the gap out of pocket with dollar amount ($15,000)"
+      - "Option 2 explains renegotiating with seller"
+      - "Option 3 explains walking away and receiving earnest money back"
+      - "Output ends with an invitation to call, not a written decision request"
+      - "Output does not advise buyer on which option to choose"
+      - "Signature block appended"
+
+  - id: tc-008
+    name: "Annual anniversary email — brief, warm, soft referral ask"
+    category: email-generation
+    priority: medium
+    tags: [email-generation, post-close, relationship]
+    input:
+      prompt: "One-year anniversary email for the Patel family — closed on 9301 Fairview Woods Dr, Carmel"
+      context: "Agent: marcus-williams-kw-indy-metro-n"
+    assertions:
+      - "Output references one-year milestone"
+      - "Output references property address"
+      - "Output includes soft home value mention (optional home estimate)"
+      - "Output includes soft referral ask"
+      - "Output is brief — under 150 words in the body"
+      - "Does not include a hard sales pitch"
+      - "Signature block appended"
+
+  # =============================================================================
+  # TEXT MESSAGE GENERATION — Format, length, tone
+  # =============================================================================
+
+  - id: tc-009
+    name: "Text message — character count included in output"
+    category: text-generation
+    priority: high
+    tags: [text-generation, output-format]
+    input:
+      prompt: "Text to buyer confirming showing tomorrow at 2104 Driftwood Ct, Westfield at 10am"
+      context: "Agent: jennifer-hartley-c21-scheetz; buyer first name: Chris"
+    assertions:
+      - "Output is labeled as a text message, not an email"
+      - "Character count displayed with output"
+      - "Message uses buyer's first name"
+      - "Message includes property address and showing time"
+      - "Message is under 300 characters"
+      - "Message does not include agent full signature block (inappropriate for text)"
+
+  - id: tc-010
+    name: "Text message — never over 300 characters for routine message"
+    category: text-generation
+    priority: medium
+    tags: [text-generation, output-format, edge-case]
+    input:
+      prompt: "Text to seller with a quick update — we have 3 showings this weekend"
+      context: "Agent: sarah-chen-fc-tucker"
+    assertions:
+      - "Message is under 300 characters"
+      - "If content would exceed 300 characters, skill suggests sending email instead"
+
+  - id: tc-011
+    name: "Difficult news — skill recommends call, not text"
+    category: text-generation
+    priority: high
+    tags: [text-generation, difficult-conversation, output-format]
+    input:
+      prompt: "Write a text telling my buyer their offer was rejected"
+      context: "Agent: david-park-c21-scheetz"
+    assertions:
+      - "Skill notes that full rejection news should be delivered by call first"
+      - "If text is still produced, it is a check-in / 'can we talk?' not a full rejection delivery"
+      - "Text does not include offer price, seller reasoning, or negotiation details"
+
+  # =============================================================================
+  # PHONE CALL TALKING POINTS — Structure and completeness
+  # =============================================================================
+
+  - id: tc-012
+    name: "Call talking points — no-offer seller conversation"
+    category: call-script
+    priority: high
+    tags: [call-script, difficult-conversation, listing-side]
+    input:
+      prompt: "Talking points for a call with seller at 11204 Whispering Creek Dr, Carmel — 22 days no offers, feedback is price and dated"
+      context: "Agent: sarah-chen-fc-tucker; comparable homes selling in 9–14 days"
+    assertions:
+      - "Output includes a labeled 'Opening line' section"
+      - "Output includes labeled 'Key points' section with 3–5 bulleted items"
+      - "Output includes a labeled 'Closing ask' section with a concrete next step"
+      - "Key points reference days-on-market comparison data"
+      - "Key points reference showing feedback themes (price, dated)"
+      - "Output presents multiple options (price reduction, improvements, hold)"
+      - "Output does not demand or pressure a specific action from seller"
+
+  - id: tc-013
+    name: "Call talking points — buyer backing out"
+    category: call-script
+    priority: high
+    tags: [call-script, difficult-conversation, buyer-side]
+    input:
+      prompt: "My buyer wants to back out of their contract on a Fishers home. Give me talking points for the call."
+      context: "Agent: jennifer-hartley-c21-scheetz"
+    assertions:
+      - "Skill recommends call-only for this situation (no email draft produced)"
+      - "Opening line acknowledges the buyer's concern before anything else"
+      - "Key points include: understand the reason, review contingencies, discuss earnest money implications"
+      - "Output does not give legal advice about contract enforceability"
+      - "Output suggests consulting managing broker if contract terms are in dispute"
+      - "Closing ask keeps relationship intact regardless of outcome"
+
+  # =============================================================================
+  # VOICE PERSONALIZATION — Tone preset affects output meaningfully
+  # =============================================================================
+
+  - id: tc-014
+    name: "Tone preset: casual-warm vs. professional-friendly — outputs differ"
+    category: voice-personalization
+    priority: high
+    tags: [voice-personalization, output-format]
+    input:
+      prompt_a: "Write a post-close congratulations email to the Torres family"
+      context_a: "Agent with tone_preset: casual-warm, formality_scale: 4, emoji_usage: moderate"
+      prompt_b: "Write a post-close congratulations email to the Torres family"
+      context_b: "Agent with tone_preset: professional-friendly, formality_scale: 6, emoji_usage: minimal"
+    assertions:
+      - "casual-warm output uses contractions and shorter sentences"
+      - "casual-warm output may include 1–2 emoji"
+      - "professional-friendly output uses more structured sentences without contractions"
+      - "professional-friendly output has zero or one emoji maximum"
+      - "Both outputs include the agent's greeting_style and closing_style"
+      - "Both outputs include the signature block"
+
+  - id: tc-015
+    name: "Luxury-polished preset — no exclamation points in routine email"
+    category: voice-personalization
+    priority: medium
+    tags: [voice-personalization, output-format]
+    input:
+      prompt: "Write a new listing alert email to a buyer for a $1.2M home in Carmel"
+      context: "Agent with tone_preset: luxury-polished, formality_scale: 8, exclamation_frequency: none"
+    assertions:
+      - "Output contains zero exclamation points"
+      - "Vocabulary is elevated (e.g., 'curated,' 'distinguished,' 'exceptional')"
+      - "Output does not use casual phrases like 'exciting news' or 'check this out'"
+      - "Signature block uses formal closing style"
+
+  - id: tc-016
+    name: "Preferred terms honored — 'home' used over 'property'"
+    category: voice-personalization
+    priority: low
+    tags: [voice-personalization, output-format]
+    input:
+      prompt: "Write a showing confirmation email"
+      context: "Agent config preferred_terms includes 'home' over 'property'"
+    assertions:
+      - "Output uses 'home' in places where 'property' would be generic default"
+      - "Output does not use any terms from agent's avoid_terms list"
+
+  # =============================================================================
+  # FAIR HOUSING COMPLIANCE — Language flagging
+  # =============================================================================
+
+  - id: tc-017
+    name: "Fair housing flag — 'great for families' detected"
+    category: fair-housing-compliance
+    priority: high
+    tags: [fair-housing-compliance, compliance]
+    input:
+      prompt: "Write a just-listed email. The home is in a great neighborhood for families near good schools."
+      context: "Agent: sarah-chen-fc-tucker"
+    assertions:
+      - "Skill flags 'great for families' as a potential fair housing issue"
+      - "Skill provides suggested replacement (e.g., 'near top-rated schools and parks')"
+      - "Output does not include 'great for families' in the final draft"
+      - "Skill does not silently swap the phrase — it surfaces the issue"
+
+  - id: tc-018
+    name: "Fair housing flag — 'safe neighborhood' detected"
+    category: fair-housing-compliance
+    priority: high
+    tags: [fair-housing-compliance, compliance]
+    input:
+      prompt: "Mention in the email that the home is in a safe neighborhood"
+      context: "Agent: any"
+    assertions:
+      - "Skill flags 'safe neighborhood' as a fair housing concern"
+      - "Skill provides replacement suggestion ('established neighborhood')"
+      - "Output does not include the phrase 'safe neighborhood'"
+

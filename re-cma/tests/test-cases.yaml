@@ -1,0 +1,288 @@
+---
+# re-cma Test Cases
+# 14 cases across 7 categories
+
+test_suite: re-cma
+version: "1.0"
+last_updated: "2026-03-30"
+
+categories:
+  - config-loading
+  - comp-selection
+  - adjustments
+  - pricing-strategy
+  - net-sheet
+  - disclaimer-compliance
+  - edge-cases
+
+tests:
+
+  # -----------------------------------------------------------------------
+  # CONFIG LOADING
+  # -----------------------------------------------------------------------
+
+  - id: tc-001
+    name: "Load valid agent config on startup"
+    category: config-loading
+    priority: high
+    tags: [config, setup, agent-profile]
+    input:
+      prompt: "/re-cma 4218 Buttonwood Dr, Fishers IN 46037 — slug: sarah-jones-fc-tucker"
+      context: "All config files exist for sarah-jones-fc-tucker"
+    assertions:
+      - "Skill loads agent-profile.yaml before any analysis begins"
+      - "Skill loads fee-structure.yaml for commission rates"
+      - "Skill loads brand-kit.yaml for branded output"
+      - "Skill loads market-areas.yaml to confirm submarket context"
+      - "Agent name and brokerage appear in the output header"
+      - "Commission rate in net sheet matches fee-structure.yaml — not a hardcoded value"
+
+  - id: tc-002
+    name: "Missing agent config redirects to re-agent-setup"
+    category: config-loading
+    priority: high
+    tags: [config, error-handling, setup]
+    input:
+      prompt: "/re-cma 4218 Buttonwood Dr, Fishers — slug: unknown-agent-xyz"
+      context: "No config directory exists for unknown-agent-xyz"
+    assertions:
+      - "Skill does not attempt to run the CMA analysis"
+      - "Skill explicitly states it cannot find a config for that slug"
+      - "Skill directs agent to run /re-agent-setup"
+      - "No placeholder commission rates or generic agent names appear in output"
+
+  - id: tc-003
+    name: "No slug provided — prompt for identification"
+    category: config-loading
+    priority: medium
+    tags: [config, agent-identification]
+    input:
+      prompt: "/re-cma 4218 Buttonwood Dr, Fishers IN 46037"
+      context: "No agent slug or name provided"
+    assertions:
+      - "Skill asks for agent slug or name before proceeding"
+      - "Skill explains how to find the slug (Monday.com registry lookup)"
+      - "Skill does not generate a partial CMA with generic branding"
+
+  # -----------------------------------------------------------------------
+  # COMP SELECTION
+  # -----------------------------------------------------------------------
+
+  - id: tc-004
+    name: "Valid comp pool — standard suburban"
+    category: comp-selection
+    priority: high
+    tags: [comps, validation, suburban]
+    input:
+      prompt: >
+        /re-cma Subject: 4218 Buttonwood Dr, Fishers 46037, 3BR/2BA, 1,850 sqft,
+        HSE district. Comps: (1) 1,920 sqft, $342K, 45 days ago, HSE;
+        (2) 1,780 sqft, $328.5K, 110 days ago, HSE;
+        (3) 2,050 sqft, $355K, 56 days ago, HSE;
+        (4) 1,800 sqft, $335K, 145 days ago, HSE.
+        Slug: sarah-jones-fc-tucker
+      context: "All comps within 1 mile, same district, within 20% GLA"
+    assertions:
+      - "Comps 1, 2, and 3 are accepted without flag"
+      - "Comp 4 (145 days old) is flagged as older than 90 days but accepted under 180-day expansion rule"
+      - "Date flag includes explanation that slower-market expansion was applied"
+      - "All four comps appear in the adjustments table"
+
+  - id: tc-005
+    name: "School district boundary — cross-district comp flagged"
+    category: comp-selection
+    priority: high
+    tags: [comps, school-district, Hamilton-County]
+    input:
+      prompt: >
+        /re-cma Subject: Carmel Clay school district home. Agent provides one comp
+        that is 0.4 miles away but across the Noblesville district boundary.
+        Slug: sarah-jones-fc-tucker
+      context: "The cross-district comp is physically close but crosses a school district line"
+    assertions:
+      - "Skill explicitly flags the cross-district comp"
+      - "Skill notes that Carmel Clay vs Noblesville boundary represents a material value difference"
+      - "Skill requires an explicit school district adjustment before using the comp"
+      - "Skill references the $20K–$50K+ district premium range for Hamilton County"
+      - "Comp is not silently excluded — agent is told to adjust or replace it"
+
+  - id: tc-006
+    name: "Distressed sale excluded from comp pool"
+    category: comp-selection
+    priority: high
+    tags: [comps, distressed-sales, REO]
+    input:
+      prompt: >
+        /re-cma Agent provides 4 comps; one is labeled as a bank-owned REO sale.
+        Slug: sarah-jones-fc-tucker
+      context: "REO sale included in agent's comp list"
+    assertions:
+      - "REO comp is excluded from the analysis"
+      - "Skill explains that REO sales are not arm's-length transactions"
+      - "Skill notes the exclusion does not reduce analysis below minimum comp threshold if 3+ remain"
+      - "If excluding REO leaves fewer than 3 comps, skill asks agent to find a replacement comp"
+
+  # -----------------------------------------------------------------------
+  # ADJUSTMENTS
+  # -----------------------------------------------------------------------
+
+  - id: tc-007
+    name: "Adjustments apply correct Central Indiana value ranges"
+    category: adjustments
+    priority: high
+    tags: [adjustments, value-ranges, Indiana]
+    input:
+      prompt: >
+        /re-cma Fishers subject 3BR/2BA, 1,850 sqft, 2-car garage, no basement,
+        updated kitchen 2022. Comp: 4BR/2BA, 1,700 sqft, 1-car garage, no basement,
+        original kitchen, sold $310,000. Slug: sarah-jones-fc-tucker
+      context: "Comp has fewer bedrooms, smaller GLA, fewer garage stalls, original kitchen"
+    assertions:
+      - "GLA adjustment uses a per-sqft rate within the $80–$180/sqft range"
+      - "Bedroom adjustment (comp has 1 fewer BR) adds $3,000–$8,000"
+      - "Garage adjustment (comp has 1 fewer stall) adds $5,000–$15,000"
+      - "Kitchen update on subject produces a positive adjustment (comp is inferior)"
+      - "Each adjustment is shown as a labeled line item, not a lump sum"
+      - "Net adjustment percentage relative to comp sale price is calculated"
+
+  - id: tc-008
+    name: "Basement adjustment — finished vs unfinished"
+    category: adjustments
+    priority: medium
+    tags: [adjustments, basement, finished-space]
+    input:
+      prompt: >
+        /re-cma Subject has 900 sqft finished basement. Comp sold $360,000 with
+        unfinished basement of similar size. Slug: sarah-jones-fc-tucker
+      context: "Subject has significantly more finished living space due to basement"
+    assertions:
+      - "Finished basement adjustment applied at $20–$40/sqft range"
+      - "Adjustment is labeled as 'finished basement' not bundled with GLA"
+      - "Total adjustment for 900 sqft basement falls within $18,000–$36,000 range"
+      - "Skill notes that finished basement GLA is not typically included in above-grade GLA"
+
+  # -----------------------------------------------------------------------
+  # PRICING STRATEGY
+  # -----------------------------------------------------------------------
+
+  - id: tc-009
+    name: "Three pricing strategies always presented"
+    category: pricing-strategy
+    priority: high
+    tags: [pricing, strategies, all-three]
+    input:
+      prompt: >
+        /re-cma Standard Fishers listing, clean comps, adjusted value around $340K.
+        Slug: sarah-jones-fc-tucker
+      context: "Normal suburban listing with adequate comp support"
+    assertions:
+      - "At-market strategy is presented with a specific price recommendation"
+      - "Aggressive strategy is presented with a price 2–5% below at-market"
+      - "Aspirational strategy is presented with a price 2–5% above at-market"
+      - "Each strategy includes a clear goal statement (what outcome it's designed for)"
+      - "Each strategy includes a DOM expectation or risk statement"
+      - "Skill does not present only one strategy even if seller has expressed a preference"
+
+  - id: tc-010
+    name: "Seller's market absorption rate affects strategy recommendation"
+    category: pricing-strategy
+    priority: high
+    tags: [pricing, absorption-rate, sellers-market]
+    input:
+      prompt: >
+        /re-cma Carmel listing. Agent provides: 4 active listings, 6 closed last
+        30 days, avg DOM 8 days, list-to-sale ratio 101.4%. Adjusted comp value
+        ~$515K. Slug: sarah-jones-fc-tucker
+      context: "Deep seller's market — 0.67 months of supply"
+    assertions:
+      - "Absorption rate calculated as < 1 month supply"
+      - "Market condition is labeled 'deep seller's market'"
+      - "Skill notes that list-to-sale ratio above 100% indicates over-asking offers are common"
+      - "Strategy recommendation favors at-market with offer deadline discussion, not automatic aggressive pricing"
+      - "Aspirational strategy flags appraisal risk above a specific threshold"
+      - "Multiple-offer process is mentioned in the strategy narrative"
+
+  # -----------------------------------------------------------------------
+  # NET SHEET
+  # -----------------------------------------------------------------------
+
+  - id: tc-011
+    name: "Net sheet uses config commission rate — never hardcoded"
+    category: net-sheet
+    priority: high
+    tags: [net-sheet, commission, fee-structure]
+    input:
+      prompt: >
+        /re-cma Run net sheet for Fishers listing at $340K, $325K, and $355K.
+        Slug: sarah-jones-fc-tucker
+      context: "fee-structure.yaml specifies a specific commission rate for this agent"
+    assertions:
+      - "Commission line item matches the rate in fee-structure.yaml"
+      - "No hardcoded percentage (e.g., '6%' or '3%') appears without loading config first"
+      - "Net sheet runs at all three price points"
+      - "Owner's title insurance line item is present (0.5–1.0% of sale price)"
+      - "Settlement fee line item is present ($250–$500 range)"
+      - "Property tax proration is listed as a line item"
+      - "Mortgage payoff appears as [TBD] if not provided by agent"
+      - "Estimated net proceeds calculated at each price point"
+
+  - id: tc-012
+    name: "Net sheet seller minimum threshold flagged"
+    category: net-sheet
+    priority: medium
+    tags: [net-sheet, seller-constraints, net-proceeds]
+    input:
+      prompt: >
+        /re-cma Indianapolis condo. Seller says 'I need to net at least $195K
+        after my payoff of $160K.' Adjusted comp range is $218K–$228K.
+        Slug: mike-wright-compass
+      context: "Seller has a specific minimum net requirement"
+    assertions:
+      - "Net sheet calculates whether the $195K minimum is achievable at recommended price"
+      - "If achievable, skill confirms this clearly"
+      - "If not achievable at any reasonable price, skill states this explicitly"
+      - "Skill does not recommend a price that is not comp-supported just to hit the seller's number"
+      - "Payoff of $160K is included as a line item on the net sheet"
+
+  # -----------------------------------------------------------------------
+  # DISCLAIMER COMPLIANCE
+  # -----------------------------------------------------------------------
+
+  - id: tc-013
+    name: "CMA-vs-appraisal disclaimer present in every output"
+    category: disclaimer-compliance
+    priority: high
+    tags: [disclaimer, CMA, appraisal, legal]
+    input:
+      prompt: >
+        /re-cma Carmel luxury home, full analysis. Slug: sarah-jones-fc-tucker
+      context: "Any complete CMA output"
+    assertions:
+      - "Output contains the CMA-is-not-an-appraisal disclaimer verbatim or substantively equivalent"
+      - "Disclaimer appears in the final branded report, not only in internal notes"
+      - "Output never uses the words 'appraised value', 'appraisal', or 'official valuation' to describe the CMA result"
+      - "Standard legal disclaimer also appears (consult managing broker / Indiana attorney)"
+      - "Disclaimer is not buried — it appears in a labeled section or as a visible footer"
+
+  # -----------------------------------------------------------------------
+  # EDGE CASES
+  # -----------------------------------------------------------------------
+
+  - id: tc-014
+    name: "Fewer than 3 comps available — limited comp handling"
+    category: edge-cases
+    priority: high
+    tags: [edge-case, limited-comps, rural, unique-property]
+    input:
+      prompt: >
+        /re-cma Rural Boone County property, 5.2 acres. Agent can only find
+        2 closed comps within 5 miles in 180 days. Slug: dan-riley-remax
+      context: "Very limited comp pool — rural acreage with few comparables"
+    assertions:
+      - "Skill acknowledges the limited comp pool explicitly"
+      - "Skill does not fabricate or invent additional comps"
+      - "Skill suggests expanding criteria (additional geography, time window) or using paired sales technique"
+      - "Skill recommends referencing cma-methodology.md for paired sales methodology"
+      - "If proceeding with 2 comps, output includes a confidence caveat"
+      - "Output still includes both disclaimers regardless of comp limitation"
+      - "Skill does not present a high-confidence price range when evidence is insufficient"

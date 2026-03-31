@@ -1,0 +1,247 @@
+# Test Cases — re-property-marketing
+# Run these to validate skill behavior across categories
+
+- id: tc-001
+  name: "Config loading — valid slug"
+  category: config-loading
+  priority: high
+  tags: [config, agent-identity, brand-kit]
+  input:
+    prompt: "Just listed 4218 Buttonwood Dr, Fishers, 46037. 4BR/3BA, 2,200 sqft, HSE schools. $425,000. Need Just Listed social post."
+    context: "Agent slug is sarah-jones-fc-tucker. All config files exist."
+  assertions:
+    - "Skill loads agent-profile.yaml and brand-kit.yaml before generating any content"
+    - "Output uses agent's name, brokerage, and tagline from config — not generic placeholders"
+    - "Hashtags in the social post come from brand-kit.yaml plus property-specific and location tags"
+    - "Brokerage disclaimer in the output matches brand-kit.yaml content"
+
+- id: tc-002
+  name: "Config loading — no config found"
+  category: config-loading
+  priority: high
+  tags: [config, error-handling, re-agent-setup]
+  input:
+    prompt: "Generate a Just Listed campaign for my new Carmel listing."
+    context: "No agent slug provided. No config files exist for this user."
+  assertions:
+    - "Skill does not generate any marketing content without a loaded agent config"
+    - "Skill asks for agent identification (slug, name, or email)"
+    - "If no config is found, skill directs agent to run /re-agent-setup"
+    - "Message is actionable and not dismissive"
+
+- id: tc-003
+  name: "Just Listed — full social series"
+  category: social-media-posts
+  priority: high
+  tags: [just-listed, instagram, facebook, feature-spotlights]
+  input:
+    prompt: "Just listed 4218 Buttonwood Dr, Fishers — 4BR/3BA, 2,200 sqft, kitchen updated 2022, finished basement, HSE schools. $425,000, MLS #21812345. Need full social series."
+    context: "Slug: sarah-jones-fc-tucker. Standard family home in Fishers."
+  assertions:
+    - "Just Listed post is produced for Instagram and Facebook"
+    - "Post leads with a hook line in the first sentence — not a spec list"
+    - "Post includes at least 3 property features in a scannable format"
+    - "Branded hashtags from brand-kit.yaml are included plus location and property-specific tags"
+    - "Feature spotlight series includes 3-5 posts, each focused on a single feature"
+    - "Image direction note is included with each post"
+    - "Fair housing compliant — no buyer demographic language"
+    - "Legal disclaimer present"
+
+- id: tc-004
+  name: "Email blast — A/B subject lines and structure"
+  category: email-blast
+  priority: high
+  tags: [email, sphere, subject-line, ab-test, signature]
+  input:
+    prompt: "Need the sphere email blast for 4218 Buttonwood Dr, Fishers — 4BR/3BA, updated kitchen, finished basement. $425,000."
+    context: "Slug: sarah-jones-fc-tucker."
+  assertions:
+    - "Two A/B subject line variants are provided — one factual, one curiosity-driven"
+    - "Preview text is distinct from both subject lines"
+    - "Email body is 150-250 words"
+    - "Body includes 3-4 feature bullets in benefit-forward language"
+    - "CTA is specific and actionable (call, reply, or link)"
+    - "Agent signature block from email-templates.yaml is included in the close"
+    - "Brokerage disclaimer from brand-kit.yaml appears at bottom"
+    - "Equal Housing statement is included at the footer"
+    - "Legal disclaimer present"
+
+- id: tc-005
+  name: "Print flyer text — all required elements"
+  category: print-flyer
+  priority: high
+  tags: [flyer, print, mls-number, disclaimer, equal-housing]
+  input:
+    prompt: "Generate print flyer text for 4218 Buttonwood Dr, Fishers. 4BR/3BA, updated kitchen, finished basement, HSE schools. $425,000, MLS #21812345."
+    context: "Slug: sarah-jones-fc-tucker."
+  assertions:
+    - "Headline is benefit-driven and under 8 words"
+    - "Full property address is included"
+    - "Price is displayed"
+    - "MLS number is included"
+    - "4-6 feature bullets in benefit-forward language"
+    - "School district is named (Hamilton Southeastern / HSE)"
+    - "Agent contact block includes name, brokerage, phone, email, and license number"
+    - "Brokerage disclaimer from brand-kit.yaml is present"
+    - "Equal Housing Opportunity note is included"
+    - "Legal disclaimer present"
+
+- id: tc-006
+  name: "Video/reel script — 30-second format"
+  category: video-script
+  priority: medium
+  tags: [reel, video, instagram, tiktok, script]
+  input:
+    prompt: "Write a 30-second reel script for 4218 Buttonwood Dr, Fishers. Updated kitchen, finished basement, HSE schools. $425,000."
+    context: "Slug: sarah-jones-fc-tucker."
+  assertions:
+    - "Script is formatted with timestamps: [0:00-0:05], [0:05-0:20], [0:20-0:27], [0:27-0:30]"
+    - "Hook line appears in the first 5 seconds and creates curiosity or benefit"
+    - "3 features are called out in the middle segment"
+    - "B-roll direction notes are included matching each segment"
+    - "CTA appears at [0:20] or later — link in bio or DM for showing"
+    - "Brand tagline from brand-kit.yaml closes the reel"
+    - "Legal disclaimer present"
+
+- id: tc-007
+  name: "Branding compliance — hashtags and tagline pulled from config"
+  category: branding-compliance
+  priority: high
+  tags: [brand-kit, hashtags, tagline, brokerage-disclaimer]
+  input:
+    prompt: "Just Listed post for 7720 Briarwood Ct, Carmel. 3BR/2.5BA, Carmel Clay schools. $475,000."
+    context: "Slug: mike-wright-compass. brand-kit.yaml has tagline: 'Your Compass in Central Indiana' and hashtags: [#MikeWrightCompass, #CentralIndianaHomes, #CompassIndiana]"
+  assertions:
+    - "Tagline 'Your Compass in Central Indiana' appears in the output"
+    - "Branded hashtags from brand-kit.yaml appear in the social post"
+    - "Output does not use generic placeholder hashtags not from brand-kit"
+    - "Brokerage disclaimer text matches the brand-kit.yaml value"
+    - "No hardcoded generic branding like '[Agent Name]' or '[Brokerage]' remains in output"
+
+- id: tc-008
+  name: "Fair housing — no demographic language"
+  category: fair-housing
+  priority: high
+  tags: [fair-housing, demographic, steering, hud-compliance]
+  input:
+    prompt: "Just Listed post for 3814 Maple Glen Dr, Carmel. 4BR/3BA, large yard. Carmel Clay schools. $489,000."
+    context: "Slug: sarah-jones-fc-tucker. Agent submitted draft copy mentioning 'perfect for growing families' and 'great neighborhood for kids.'"
+  assertions:
+    - "Output does not include 'perfect for families' or 'great for kids' or equivalent language"
+    - "School district is named by its actual name (Carmel Clay Schools) without demographic framing"
+    - "If agent-submitted copy was provided with problematic language, the skill flags it"
+    - "Skill explains why the flagged phrase is a fair housing concern"
+    - "Compliant alternative language is suggested"
+    - "Legal disclaimer present"
+
+- id: tc-009
+  name: "Fair housing — neighborhood description"
+  category: fair-housing
+  priority: high
+  tags: [fair-housing, neighborhood, steering]
+  input:
+    prompt: "Write the neighborhood spotlight post for 5901 Orchard Pkwy, Zionsville. Zionsville schools. Quiet street."
+    context: "Slug: dan-riley-remax."
+  assertions:
+    - "Neighborhood post names specific amenities (parks, trails, restaurants) if provided — not demographic descriptions"
+    - "School district is named without any reference to school demographics or rankings framed in demographic terms"
+    - "Copy does not include phrases implying who lives in or should live in the neighborhood"
+    - "'Quiet street' retained if used only for physical noise context; flagged if used as coded steering language"
+    - "Legal disclaimer present"
+
+- id: tc-010
+  name: "Price reduction — positive reframe"
+  category: social-media-posts
+  priority: high
+  tags: [price-reduction, seller-confidence, reframe]
+  input:
+    prompt: "Price reduction on 3218 Oak Creek Ln, Greenwood. Was $369,000, now $349,000. 38 days on market. Keep it positive."
+    context: "Slug: lisa-chen-kw."
+  assertions:
+    - "Post uses 'Updated Price' or equivalent — NOT 'PRICE DROP', 'DRASTIC REDUCTION', or 'MUST SELL'"
+    - "Post leads with a property strength, not the price change"
+    - "Price change is acknowledged briefly and framed as an opportunity"
+    - "Days on market (38) is NOT mentioned in the public-facing post"
+    - "CTA is encouraging without being pressuring"
+    - "Sphere email (if included) uses a factual, calm subject line"
+    - "Legal disclaimer present"
+
+- id: tc-011
+  name: "Broker open invitation — agent-to-agent tone"
+  category: email-blast
+  priority: medium
+  tags: [broker-open, agent-to-agent, buyer-pool, access-details]
+  input:
+    prompt: "Need a broker open invitation for 5501 Orchard Blvd, Noblesville. Thursday the 10th, 11am–1pm. 4BR/2.5BA, main-floor primary suite, 3-car garage. $389,000."
+    context: "Slug: sarah-jones-fc-tucker. Light refreshments offered."
+  assertions:
+    - "Subject line includes 'Broker Open' or equivalent and the date/time"
+    - "Body is written for a real estate agent audience, not a consumer audience"
+    - "Body describes the buyer pool this property would attract (by buyer situation, not demographics)"
+    - "Practical details are included: access method, parking, showing restrictions"
+    - "Refreshments mention is included"
+    - "CTA is 'See you there' or equivalent collegial close"
+    - "Legal disclaimer present"
+
+- id: tc-012
+  name: "Investment property — cap rate and income framing"
+  category: social-media-posts
+  priority: medium
+  tags: [investment, cap-rate, tenant-occupied, privacy]
+  input:
+    prompt: "Investment property: 2244 E 30th St, Indianapolis. 3BR/1BA, $1,150/month tenant, lease through October. $139,000. Investor audience."
+    context: "Slug: lisa-chen-kw. Tenant-occupied."
+  assertions:
+    - "Social post leads with the income angle — monthly rent and/or cap rate"
+    - "Copy does not include interior photos reference without noting tenant consent requirement"
+    - "Showing note acknowledges tenant-occupied status and advance notice requirement"
+    - "Investment email subject line references cash flow or income, not lifestyle"
+    - "Skill notes Indiana landlord-tenant law notice requirement for showings (IC 32-31-3)"
+    - "Legal disclaimer present"
+
+- id: tc-013
+  name: "Just Sold — seller CTA and stats"
+  category: social-media-posts
+  priority: high
+  tags: [just-sold, seller-cta, days-on-market, sphere-email]
+  input:
+    prompt: "Just sold 872 Westfield Blvd, Broad Ripple. Listed and sold in 9 days, multiple offers. $298,500. Need social post + sphere email for seller leads."
+    context: "Slug: dan-riley-remax."
+  assertions:
+    - "Social post prominently features the 9-day / multiple offer outcome"
+    - "Post does not name the buyers or sellers"
+    - "Soft seller CTA is included on both the post and the email"
+    - "Sphere email uses the sale as a market proof point, not just a celebration"
+    - "Email body ends with a CTA to request a CMA"
+    - "Agent signature from email-templates.yaml is included in email close"
+    - "Legal disclaimer present"
+
+- id: tc-014
+  name: "Luxury listing — elevated tone"
+  category: social-media-posts
+  priority: medium
+  tags: [luxury, carmel, lifestyle-first, elevated-tone]
+  input:
+    prompt: "Luxury listing at 11204 Springmill Rd, Carmel. 5BR/4.5BA, 5,400 sqft, Sub-Zero/Wolf kitchen, gunite pool, outdoor kitchen. $1,100,000."
+    context: "Slug: mike-wright-compass. Agent-profile.yaml sets brand voice as 'elevated, lifestyle-first.'"
+  assertions:
+    - "Copy leads with lifestyle imagery, not specs in the first sentence"
+    - "Luxury finishes are named specifically (Sub-Zero, Wolf) rather than generically"
+    - "Price is present but positioned as confirmation, not the hook"
+    - "Tone is aspirational without being pretentious"
+    - "Fair housing compliant — no demographic buyer descriptions"
+    - "Legal disclaimer present"
+
+- id: tc-015
+  name: "Legal disclaimer — present on every deliverable"
+  category: legal-disclaimer
+  priority: high
+  tags: [disclaimer, mandatory, compliance]
+  input:
+    prompt: "Quick — just give me one Instagram caption for 4218 Buttonwood Dr, Fishers. Just Listed."
+    context: "Slug: sarah-jones-fc-tucker. Short output requested."
+  assertions:
+    - "Legal disclaimer is included even for a single short deliverable"
+    - "Disclaimer text matches the required language: 'guidance and informational purposes only... does not constitute legal advice'"
+    - "Disclaimer references managing broker and Indiana real estate attorney"
+    - "Disclaimer references Indiana Real Estate Commission rules"

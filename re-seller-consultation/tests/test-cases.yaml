@@ -1,0 +1,237 @@
+# Test Cases — re-seller-consultation
+# Run these to validate skill behavior across categories
+
+- id: tc-001
+  name: "Config loading — valid slug provided"
+  category: config-loading
+  priority: high
+  tags: [config, agent-identity, setup]
+  input:
+    prompt: "Prep seller consultation for 7214 Bayberry Lane, Fishers — motivated seller, job relocation"
+    context: "Agent slug is jane-smith-fc-tucker. Config files exist at config/jane-smith-fc-tucker/."
+  assertions:
+    - "Skill loads agent-profile.yaml and fee-structure.yaml before generating any output"
+    - "Output uses agent's full name and brokerage from config — not generic placeholders"
+    - "Net sheet pulls commission rates from fee-structure.yaml, not hardcoded values"
+
+- id: tc-002
+  name: "Config loading — no config found"
+  category: config-loading
+  priority: high
+  tags: [config, error-handling, re-agent-setup]
+  input:
+    prompt: "Help me prep for a listing consultation"
+    context: "No agent config exists. Agent has not run re-agent-setup."
+  assertions:
+    - "Skill does not proceed with consultation content"
+    - "Output instructs agent to run /re-agent-setup first"
+    - "Message is clear, not dismissive, and does not expose a stack trace or internal error"
+
+- id: tc-003
+  name: "Config loading — agent identified by name, no slug"
+  category: config-loading
+  priority: medium
+  tags: [config, monday-lookup, agent-identity]
+  input:
+    prompt: "It's Sarah Johnson from Century 21 — help me prep for a seller consultation"
+    context: "Agent did not provide a slug. Monday.com registry has a row for 'Sarah Johnson' with slug 'sarah-johnson-c21-scheetz'."
+  assertions:
+    - "Skill asks for or looks up agent's slug via Monday.com Real Estate Agent Registry"
+    - "Once slug is resolved, output uses Sarah Johnson's name and Century 21 Scheetz branding"
+    - "Skill does not proceed with generic placeholder output before identifying the agent"
+
+- id: tc-004
+  name: "Goal discovery — standard questionnaire generated"
+  category: goal-discovery
+  priority: high
+  tags: [discovery, questionnaire, seller-goals]
+  input:
+    prompt: "Generate the seller goal discovery questionnaire for a listing consultation"
+    context: "Standard occupied-home sale. No specific scenario provided."
+  assertions:
+    - "Output includes questions in all four categories: motivation, financial, timeline, and property"
+    - "At least 12 questions generated"
+    - "Questions are open-ended, not yes/no leading questions"
+    - "Motivation question is first and open-ended: 'What's prompting you to sell at this time?'"
+    - "Financial section asks about net proceeds goal without anchoring on a specific number first"
+    - "Legal disclaimer is present"
+
+- id: tc-005
+  name: "Goal discovery — relocation seller scenario"
+  category: goal-discovery
+  priority: high
+  tags: [discovery, relocation, timeline, scenario]
+  input:
+    prompt: "Seller just got a job offer in Denver, starts in 6 weeks. Wants to close in 45 days."
+    context: "Hard deadline situation. 45 days from list to close."
+  assertions:
+    - "Discovery questionnaire includes questions about employer relo assistance"
+    - "Questionnaire asks whether seller has secured housing in Denver"
+    - "Questionnaire asks about leaseback flexibility in case buyer's close timeline doesn't match seller's move date"
+    - "Skill flags that 45-day close requires contract by approximately Day 10-15 of listing"
+    - "Timeline worksheet accounts for the hard deadline"
+    - "Pricing recommendation leans toward At-Market or Aggressive — not Aspirational"
+
+- id: tc-006
+  name: "Agency explanation — verbal disclosure script"
+  category: agency-explanation
+  priority: high
+  tags: [agency, IC-25-34.1, disclosure-script, seller-agent]
+  input:
+    prompt: "Give me the agency disclosure script for my seller consultation"
+    context: "Standard seller's agent representation."
+  assertions:
+    - "Script includes verbal disclosure language for first substantive contact"
+    - "Script explains seller's agent duties: loyalty, confidentiality, disclosure, obedience, reasonable care"
+    - "Script references Exclusive Right to Sell listing agreement (IAR Form 103)"
+    - "Script explains limited agency (dual agency) scenario and that written consent is required"
+    - "Script addresses post-NAR settlement buyer compensation — explains it is negotiable, not mandated"
+    - "Script does NOT claim buyer broker compensation is standard or required"
+    - "Legal disclaimer is present"
+
+- id: tc-007
+  name: "Agency explanation — limited agency (dual agency) scenario"
+  category: agency-explanation
+  priority: high
+  tags: [agency, dual-agency, limited-agent, IC-25-34.1-10-9]
+  input:
+    prompt: "Explain limited agency to my seller — I may end up representing the buyer too if my team has a buyer for this property"
+    context: "Agent is explaining potential limited agency before it arises."
+  assertions:
+    - "Output explains that limited agency means agent cannot advocate for either party's price position"
+    - "Output states that written informed consent from both parties is required before limited agency arises"
+    - "Output references IC 25-34.1-10-9"
+    - "Output explains the practical limitation: agent cannot share seller's bottom line with buyer or vice versa"
+    - "Output recommends discussing this proactively at listing appointment — before any buyer emerges"
+    - "Legal disclaimer present"
+
+- id: tc-008
+  name: "Pricing strategy — three strategies presented with data"
+  category: pricing-strategy
+  priority: high
+  tags: [pricing, strategy, CMA, at-market, aggressive, aspirational]
+  input:
+    prompt: "Pricing strategy for 9330 Harvest Moon Drive, Zionsville. Comps support $505-$520K. Seller is motivated."
+    context: "Seller is motivated, no hard deadline. Comps are clear."
+  assertions:
+    - "Output presents all three strategies: At-Market, Aggressive/Fast Sale, Aspirational/Test the Market"
+    - "Each strategy includes expected DOM range and probability outcome"
+    - "Output gives a clear recommendation with rationale tied to seller's motivation level"
+    - "CMA disclaimer included: 'This is a comparative market analysis — not an appraisal'"
+    - "Output does not present any commission rate as industry standard — rates reference fee-structure.yaml"
+    - "Legal disclaimer present"
+
+- id: tc-009
+  name: "Pricing strategy — unrealistic price expectations"
+  category: pricing-strategy
+  priority: high
+  tags: [pricing, price-expectations, scripts, data-anchor, net-proceeds-reframe]
+  input:
+    prompt: "Seller wants $575K. Comps are $505-$520K. They think the market has gone way up since 2020."
+    context: "Seller is 11-13% over comp-supported range. Bought in 2020 for $490K."
+  assertions:
+    - "Output provides at least two price expectation management scripts by name"
+    - "Data anchor script is included — uses comp data and price per square foot framing"
+    - "Net proceeds reframe script is included — shows actual dollar-in-pocket difference between $575K and $520K"
+    - "Output suggests generating a side-by-side net sheet comparison at both price points"
+    - "Output does not simply say 'show them the comps' — provides actual language for the agent to use"
+    - "Output acknowledges the agent may need to decide whether to take an overpriced listing"
+    - "Legal disclaimer present"
+
+- id: tc-010
+  name: "Net sheet — estimate at provided sale price"
+  category: net-sheet
+  priority: high
+  tags: [net-sheet, fee-structure, closing-costs, Indiana-norms]
+  input:
+    prompt: "Generate net sheet estimate for $425,000 at 4822 Maple Drive, Indianapolis"
+    context: "Agent has fee-structure.yaml configured. Mortgage payoff is TBD."
+  assertions:
+    - "Output uses listing commission from fee-structure.yaml — not a hardcoded rate"
+    - "Output includes Indiana-standard seller closing costs: owner's title insurance, settlement fee, title search, recording fee"
+    - "Output includes property tax proration line with note that Indiana taxes are paid in arrears"
+    - "Output flags mortgage payoff as TBD — instructs agent to get payoff from lender"
+    - "Output includes disclaimer: 'This is an estimate only — actual figures determined at closing by the title company'"
+    - "Output does NOT represent buyer broker compensation as mandatory — shows as negotiable line item"
+    - "Legal disclaimer present"
+
+- id: tc-011
+  name: "Net sheet — buyer compensation scenarios"
+  category: net-sheet
+  priority: high
+  tags: [net-sheet, buyer-compensation, NAR-settlement, post-2024]
+  input:
+    prompt: "Seller is asking if they have to pay the buyer's agent. Show me both scenarios on the net sheet."
+    context: "Post-NAR settlement. Seller is asking about buyer broker compensation."
+  assertions:
+    - "Output explicitly states buyer broker compensation is NOT mandated in MLS — it is negotiable"
+    - "Output presents two net sheet scenarios: one with buyer compensation offered, one without"
+    - "Output explains strategic implications of offering vs. not offering buyer compensation"
+    - "Output does NOT tell the seller they are required to offer buyer compensation"
+    - "Legal disclaimer present"
+
+- id: tc-012
+  name: "Timeline — standard 30-45 day close"
+  category: timeline
+  priority: high
+  tags: [timeline, milestones, pre-listing, closing]
+  input:
+    prompt: "Build a timeline for a listing we want to launch in 2 weeks with a target close of 45 days after contract"
+    context: "Standard Central Indiana transaction timeline."
+  assertions:
+    - "Output includes all major milestones: pre-listing prep, photography, MLS launch, offer review, under contract, inspection, appraisal, clear to close, closing"
+    - "Inspection period is listed as Days 1-10 after contract — consistent with Indiana norms"
+    - "Appraisal is listed as Days 14-21 after contract"
+    - "Clear to close is approximately Day 28-30 after contract"
+    - "Timeline accounts for pre-listing prep and photography before MLS launch"
+    - "Legal disclaimer present"
+
+- id: tc-013
+  name: "Edge case — estate sale, executor authority unclear"
+  category: edge-cases
+  priority: high
+  tags: [estate, executor, deed-authority, red-flag]
+  input:
+    prompt: "Estate sale — the son called me to list the home. I haven't confirmed whether he's the executor or if there's a will."
+    context: "Authority to sign listing agreement is unconfirmed."
+  assertions:
+    - "Skill flags that agent must confirm executor/PR authority before proceeding with listing"
+    - "Output notes that all owners/parties with deed interest may need to sign the listing agreement"
+    - "Output recommends asking for letters testamentary or other documentation confirming authority"
+    - "Output recommends consulting estate attorney if multiple heirs or probate is involved"
+    - "Skill does NOT proceed with full consultation prep as if listing is a done deal"
+    - "Legal disclaimer present with explicit note to consult managing broker and estate attorney"
+
+- id: tc-014
+  name: "Edge case — divorce, only one spouse has contacted agent"
+  category: edge-cases
+  priority: high
+  tags: [divorce, co-owners, listing-authority, red-flag]
+  input:
+    prompt: "Wife called me about listing their home. Says husband isn't being cooperative. Both names are on the deed."
+    context: "Active divorce. Two co-owners on deed. One is resistant."
+  assertions:
+    - "Skill flags that both parties on the deed must sign the listing agreement"
+    - "Output advises agent to meet with both parties — not just the initiating spouse"
+    - "Output recommends checking whether a divorce decree or court order addresses the property"
+    - "Output explicitly states agent cannot favor one party over the other as seller's agents for both"
+    - "Output warns agent not to communicate about listing terms with only one party without both parties' knowledge"
+    - "Output recommends routing through attorneys if parties cannot agree on price or timing"
+    - "Legal disclaimer present with note to consult managing broker before proceeding"
+
+- id: tc-015
+  name: "Edge case — seller behind on mortgage / upside down"
+  category: edge-cases
+  priority: high
+  tags: [short-sale, mortgage, red-flag, upside-down]
+  input:
+    prompt: "Seller mentioned they haven't made their mortgage payment in 3 months. They owe $340K and want to list at $310K."
+    context: "Seller is upside down. Potential short sale situation."
+  assertions:
+    - "Skill identifies this as a potential short sale scenario"
+    - "Output flags that the lender must approve any sale below the payoff amount"
+    - "Output advises agent to refer seller to their lender's loss mitigation department before proceeding"
+    - "Output recommends seller consult a HUD-approved housing counselor and/or real estate attorney"
+    - "Output does NOT generate a standard net sheet showing positive proceeds when seller is upside down"
+    - "Skill advises agent to consult managing broker before proceeding — short sales require specialized handling"
+    - "Legal disclaimer present"

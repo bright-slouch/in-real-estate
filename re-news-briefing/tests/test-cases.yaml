@@ -1,0 +1,212 @@
+# Test Cases — re-news-briefing
+# Categories: config-loading, feed-fetching, deduplication, categorization,
+#             personalization, output-format, feed-failure-handling,
+#             social-post-generation, weekly-digest
+
+- id: tc-001
+  name: "Config loading — valid agent slug"
+  category: config-loading
+  priority: high
+  tags: [config, agent-profile, market-areas]
+  input:
+    prompt: "Give me my morning briefing"
+    context: "Agent slug: tom-garrett-kw-indy-metro-n. Config files present at config/tom-garrett-kw-indy-metro-n/."
+  assertions:
+    - "Loads agent-profile.yaml before fetching any feeds"
+    - "Loads market-areas.yaml to build custom feed queries"
+    - "Uses agent's name in the briefing header (e.g., 'Prepared for Tom Garrett')"
+    - "Uses agent's brokerage name in the briefing header"
+    - "Does not proceed with a generic/unbranded briefing"
+
+- id: tc-002
+  name: "Config loading — agent config not found"
+  category: config-loading
+  priority: high
+  tags: [config, error-handling, re-agent-setup]
+  input:
+    prompt: "Morning briefing"
+    context: "No agent config found. No slug provided."
+  assertions:
+    - "Does not attempt to fetch any RSS feeds"
+    - "Informs the user that no agent config was found"
+    - "Directs the user to run /re-agent-setup"
+    - "Does not produce a generic unbranded briefing as a fallback"
+
+- id: tc-003
+  name: "Feed fetching — base feed list always included"
+  category: feed-fetching
+  priority: high
+  tags: [rss, feeds, ibj, google-news]
+  input:
+    prompt: "Full briefing"
+    context: "Agent has 2 farm areas: Carmel and Westfield."
+  assertions:
+    - "Fetches https://www.ibj.com/topics/real-estate/feed"
+    - "Fetches https://www.ibj.com/feed"
+    - "Fetches https://news.google.com/rss/search?q=Indianapolis+real+estate&hl=en-US&gl=US&ceid=US:en"
+    - "Fetches https://news.google.com/rss/search?q=Indiana+housing+market&hl=en-US&gl=US&ceid=US:en"
+    - "Fetches a custom Carmel feed URL"
+    - "Fetches a custom Westfield feed URL"
+
+- id: tc-004
+  name: "Feed fetching — custom farm area feed cap at 3"
+  category: feed-fetching
+  priority: medium
+  tags: [rss, feeds, market-areas, limit]
+  input:
+    prompt: "Morning briefing"
+    context: "Agent market-areas.yaml lists 5 farm areas: Carmel, Fishers, Noblesville, Westfield, Zionsville."
+  assertions:
+    - "Adds exactly 3 custom farm area feeds (not 5)"
+    - "Prioritizes farm areas in the order they appear in market-areas.yaml"
+    - "Does not exceed 7 total feeds (4 base + 3 custom)"
+
+- id: tc-005
+  name: "Deduplication — same story in multiple feeds"
+  category: deduplication
+  priority: high
+  tags: [dedup, ibj, google-news]
+  input:
+    prompt: "Morning briefing"
+    context: |
+      Feed items returned:
+      - IBJ Real Estate: "Carmel approves 200-unit mixed-use development near Midtown" (March 30)
+      - Google News Indianapolis RE: "Carmel approves mixed-use development near Midtown area" (March 30)
+      These two headlines share 7 consecutive words: "approves mixed-use development near Midtown"
+  assertions:
+    - "Includes only one story about the Carmel mixed-use development"
+    - "Keeps the IBJ version (higher authority source)"
+    - "Does not show two separate entries for the same story"
+
+- id: tc-006
+  name: "Categorization — correct assignment of story types"
+  category: categorization
+  priority: high
+  tags: [categorization, market-conditions, local-development, mortgage]
+  input:
+    prompt: "Full briefing"
+    context: |
+      Feed returns these headlines:
+      1. "30-year mortgage rate edges up to 6.87%" (Mortgage/Finance)
+      2. "Fishers approves 400-acre master plan for Nickel Plate District" (Local Development)
+      3. "NAR reports existing home sales rose 3.2% nationally in February" (National RE News)
+      4. "Indiana legislature advances property tax relief bill" (Regulatory/Legal)
+      5. "Downtown Indy adds 1,200 jobs as Salesforce expands HQ" (General Business)
+  assertions:
+    - "Assigns rate story to Mortgage / Finance category"
+    - "Assigns Fishers Nickel Plate story to Local Development category"
+    - "Assigns NAR story to National RE News category"
+    - "Assigns Indiana property tax story to Regulatory / Legal category"
+    - "Assigns Salesforce expansion story to General Business category"
+    - "No story is assigned to more than one category"
+
+- id: tc-007
+  name: "Personalization — farm area stories elevated to top of section"
+  category: personalization
+  priority: high
+  tags: [personalization, farm-area, local-relevance]
+  input:
+    prompt: "Morning briefing"
+    context: |
+      Agent farms Hamilton County (Carmel, Fishers). Local Development feed returns:
+      1. "New Costco planned for Greenwood Park Mall area" (not farm area)
+      2. "Carmel Arts & Design District adds mixed-income housing component" (farm area — Carmel)
+      3. "Noblesville riverfront trail extension approved" (not primary farm area)
+  assertions:
+    - "Carmel Arts & Design District story appears first in Local Development section"
+    - "Story tagged or flagged as relevant to agent's farm area"
+    - "Local context note added (e.g., what this means for Carmel sellers or buyers)"
+
+- id: tc-008
+  name: "Output format — correct template structure produced"
+  category: output-format
+  priority: high
+  tags: [output, format, header, footer, disclaimer]
+  input:
+    prompt: "Full briefing"
+    context: "Agent formality: 5/10. Emojis allowed."
+  assertions:
+    - "Output begins with briefing header including date"
+    - "Header includes agent name and brokerage"
+    - "Each story shows headline, source, date, and summary"
+    - "Each story includes a link"
+    - "Footer shows story count, source count, and fetch time"
+    - "Third-party content disclaimer appears at the bottom"
+    - "Emojis present in section headers (formality is 5)"
+
+- id: tc-009
+  name: "Output format — no emojis for high-formality agent"
+  category: output-format
+  priority: medium
+  tags: [output, format, formality, emojis]
+  input:
+    prompt: "Morning briefing"
+    context: "Agent formality setting: 8/10. Luxury-polished tone preset."
+  assertions:
+    - "No emojis in section headers"
+    - "No emojis in briefing title"
+    - "Section headers use plain text (e.g., '### Market Conditions' not '### 📊 Market Conditions')"
+    - "Language in summaries matches polished/formal register"
+
+- id: tc-010
+  name: "Feed failure handling — single feed down"
+  category: feed-failure-handling
+  priority: high
+  tags: [error-handling, feed-failure, graceful-degradation]
+  input:
+    prompt: "Morning briefing"
+    context: "IBJ Real Estate feed returns HTTP 503. All other feeds return successfully."
+  assertions:
+    - "Briefing is produced using available feeds (not aborted)"
+    - "Footer notes that IBJ Real Estate feed was unavailable"
+    - "No hallucinated IBJ-style stories added to fill the gap"
+    - "Remaining feeds fetched and processed normally"
+
+- id: tc-011
+  name: "Feed failure handling — all feeds fail"
+  category: feed-failure-handling
+  priority: high
+  tags: [error-handling, feed-failure, complete-failure]
+  input:
+    prompt: "Morning briefing"
+    context: "All 7 feeds return HTTP errors or timeouts."
+  assertions:
+    - "Skill does not produce any fabricated news stories"
+    - "Clearly informs the agent that all feeds are currently unavailable"
+    - "Suggests trying again in a few minutes"
+    - "Does not fill the briefing with general real estate knowledge presented as current news"
+
+- id: tc-012
+  name: "Social post generation — shareable story identified and drafted"
+  category: social-post-generation
+  priority: medium
+  tags: [social-post, brand-voice, hashtags]
+  input:
+    prompt: "Morning briefing with a social post for the top story"
+    context: |
+      Agent: Sarah Chen, professional-friendly tone.
+      Top shareable story: "Hamilton County home prices rose 6.2% year-over-year in February per MIBOR data"
+      brand-kit.yaml includes hashtags: #HamiltonCountyHomes #CentralIndianaRealEstate #SarahChenRealtor
+  assertions:
+    - "Social post section appears after the briefing"
+    - "Post is written in agent's brand voice (professional-friendly)"
+    - "Post includes at least one hashtag from brand-kit.yaml"
+    - "Post does not reproduce more than 15 words verbatim from the source article"
+    - "Platform recommendation included (LinkedIn, Facebook, or Instagram)"
+    - "Post is 150-250 words for LinkedIn or 80-120 words for Facebook/Instagram"
+
+- id: tc-013
+  name: "Weekly digest — 7-day age filter and category summaries"
+  category: weekly-digest
+  priority: medium
+  tags: [weekly-digest, age-filter, category-summary]
+  input:
+    prompt: "Week in review — what happened in Central Indiana real estate this week?"
+    context: "Today is Friday, March 30, 2026. Agent wants content for a client newsletter."
+  assertions:
+    - "Feed fetching uses a 7-day age filter (not 48-hour)"
+    - "Items from March 23-30 are eligible for inclusion"
+    - "Items older than March 23 are excluded"
+    - "Each category section includes a 'week in review' summary sentence"
+    - "Individual story summaries are slightly longer (2-3 sentences) to support newsletter sourcing"
+    - "Social post offered as optional Friday wrap-up"

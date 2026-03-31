@@ -1,0 +1,364 @@
+# Test Cases: re-market-update
+# Format: id, name, category, priority, tags, input, assertions
+# Skill: re-market-update
+
+skill: re-market-update
+
+test_cases:
+
+  # =============================================================================
+  # CONFIG LOADING — Agent config identification and loading
+  # =============================================================================
+
+  - id: tc-001
+    name: "Load config from slug — agent-profile, brand-kit, market-areas loaded"
+    category: config-loading
+    priority: high
+    tags: [config-loading, smoke]
+    input:
+      prompt: "Hamilton County current month, email newsletter"
+      context: "Working as sarah-chen-fc-tucker"
+    assertions:
+      - "Loads agent-profile.yaml from config/sarah-chen-fc-tucker/"
+      - "Loads brand-kit.yaml from config/sarah-chen-fc-tucker/"
+      - "Loads market-areas.yaml from config/sarah-chen-fc-tucker/"
+      - "Output uses agent's name (Sarah Chen) not a placeholder"
+      - "Output uses brokerage name from config"
+
+  - id: tc-002
+    name: "Config not found — directs to re-agent-setup"
+    category: config-loading
+    priority: high
+    tags: [config-loading, error-handling]
+    input:
+      prompt: "Hamilton County market update"
+      context: "Working as unknown-agent-xyz"
+    assertions:
+      - "Skill reports agent config not found"
+      - "Skill directs user to run /re-agent-setup"
+      - "Skill does not proceed to data research without config"
+
+  - id: tc-003
+    name: "No agent specified — skill asks for identification"
+    category: config-loading
+    priority: medium
+    tags: [config-loading, edge-case]
+    input:
+      prompt: "Give me a Fishers market update for my newsletter"
+      context: "No agent slug or name provided"
+    assertions:
+      - "Skill asks for agent name or slug before proceeding"
+      - "Skill does not use placeholder agent name in any output"
+
+  # =============================================================================
+  # DATA RESEARCH — Correct source identification and search behavior
+  # =============================================================================
+
+  - id: tc-004
+    name: "MIBOR cited as primary source for county-level data"
+    category: data-research
+    priority: high
+    tags: [data-research, sources]
+    input:
+      prompt: "Hamilton County February 2026 detailed report"
+      context: "Working as marcus-williams-kw-indy-metro-n"
+    assertions:
+      - "Output cites MIBOR by name as a data source"
+      - "Output includes publication date or data lag note"
+      - "Output does not present search-estimated data as definitive MLS fact"
+
+  - id: tc-005
+    name: "IAR named as source for Indiana-level context"
+    category: data-research
+    priority: medium
+    tags: [data-research, sources]
+    input:
+      prompt: "Johnson County Q1 2026 report with statewide context"
+      context: "Working as jennifer-hartley-c21-scheetz"
+    assertions:
+      - "Report references IAR (Indiana Association of REALTORS) as a source"
+      - "Statewide comparison uses IAR framing, not generic national statistics"
+
+  - id: tc-006
+    name: "Redfin used for zip-level data when county data is insufficient"
+    category: data-research
+    priority: medium
+    tags: [data-research, sources]
+    input:
+      prompt: "Carmel zip 46032 market update, current month"
+      context: "Working as sarah-chen-fc-tucker"
+    assertions:
+      - "Skill searches Redfin for zip-level data"
+      - "Output notes zip-level data sourced from Redfin"
+      - "Output encourages agent to verify through BLC/Matrix"
+
+  - id: tc-007
+    name: "Data lag acknowledged when current month not yet published"
+    category: data-research
+    priority: medium
+    tags: [data-research, data-caveats]
+    input:
+      prompt: "Hamilton County market update for current month"
+      context: "Prompt submitted during first two weeks of the month (before MIBOR publishes)"
+    assertions:
+      - "Skill notes that MIBOR publishes ~third week of following month"
+      - "Skill uses most recently available data and clearly states which period"
+      - "Skill does not present prior-month data as current-month data without noting the lag"
+
+  # =============================================================================
+  # METRIC CALCULATION — Correct formulas and interpretation
+  # =============================================================================
+
+  - id: tc-008
+    name: "Absorption rate calculated correctly from raw inputs"
+    category: metric-calculation
+    priority: high
+    tags: [metric-calculation]
+    input:
+      prompt: "Calculate months of supply: 245 active listings, 82 closed sales last month"
+      context: "Working as david-park-c21-scheetz"
+    assertions:
+      - "Months of supply = 245 ÷ 82 = 2.99 (approximately 3.0 months)"
+      - "Market classified as balanced market (3–6 months range)"
+      - "Skill explains what this means for buyers and sellers"
+
+  - id: tc-009
+    name: "List-to-sale ratio calculated correctly and interpreted"
+    category: metric-calculation
+    priority: high
+    tags: [metric-calculation]
+    input:
+      prompt: "Average list price $425,000, average sale price $432,750 — what does this mean?"
+      context: "Working as tyler-okonkwo-remax-advanced"
+    assertions:
+      - "L/S ratio = (432,750 ÷ 425,000) × 100 = 101.8%"
+      - "Skill interprets as seller's market indicator (homes selling above asking)"
+      - "Skill notes this indicates multiple offers are common"
+
+  - id: tc-010
+    name: "Market condition classification applied correctly — seller's market"
+    category: metric-calculation
+    priority: high
+    tags: [metric-calculation, market-interpretation]
+    input:
+      prompt: "Hamilton County months of supply is 1.4"
+      context: "Working as sarah-chen-fc-tucker"
+    assertions:
+      - "Skill classifies as strong seller's market (< 2 months)"
+      - "Output includes language about multiple offers, fast DOM, above-list pricing"
+      - "Output gives actionable framing for both buyers and sellers"
+
+  # =============================================================================
+  # OUTPUT FORMAT — EMAIL
+  # =============================================================================
+
+  - id: tc-011
+    name: "Email newsletter includes all required structural elements"
+    category: output-format-email
+    priority: high
+    tags: [output-format-email, output-structure]
+    input:
+      prompt: "Hamilton County March 2026, email newsletter format"
+      context: "Working as sarah-chen-fc-tucker"
+    assertions:
+      - "Output includes a subject line"
+      - "Output is 200–300 words"
+      - "Output highlights 2–3 key stats in plain language"
+      - "Output includes a section for what it means for sellers"
+      - "Output includes a section for what it means for buyers"
+      - "Output includes a call-to-action"
+      - "Output includes agent name, phone, email from config"
+      - "Output includes brokerage disclaimer from brand-kit.yaml"
+      - "Output includes data caveat language"
+
+  - id: tc-012
+    name: "Email uses agent's tone preset — not generic placeholder voice"
+    category: output-format-email
+    priority: high
+    tags: [output-format-email, voice-tone]
+    input:
+      prompt: "Fishers February 2026, email newsletter"
+      context: "Working as marcus-williams-kw-indy-metro-n; agent has casual-warm tone preset"
+    assertions:
+      - "Email uses first-person, conversational language matching casual-warm tone"
+      - "Email does not use formal corporate language inconsistent with agent's config"
+      - "Email does not use emojis if agent config has email emoji disabled"
+
+  # =============================================================================
+  # OUTPUT FORMAT — SOCIAL MEDIA
+  # =============================================================================
+
+  - id: tc-013
+    name: "Social media caption includes hashtags from brand-kit"
+    category: output-format-social
+    priority: high
+    tags: [output-format-social, output-structure, branding]
+    input:
+      prompt: "Johnson County April 2026, social media caption"
+      context: "Working as marcus-williams-kw-indy-metro-n"
+    assertions:
+      - "Caption includes at least 3 hashtags from agent's brand-kit.yaml"
+      - "Caption includes local geographic hashtags (e.g., #JohnsonCountyRealEstate)"
+      - "Caption is 150–200 words"
+      - "Caption includes a call-to-action (DM, comment, link in bio)"
+      - "Caption includes agent name and brokerage"
+
+  # =============================================================================
+  # OUTPUT FORMAT — DETAILED REPORT
+  # =============================================================================
+
+  - id: tc-014
+    name: "Detailed report includes full metric table with YoY column"
+    category: output-format-report
+    priority: high
+    tags: [output-format-report, output-structure]
+    input:
+      prompt: "Carmel Q1 2026 detailed report for buyer consultation"
+      context: "Working as sarah-chen-fc-tucker"
+    assertions:
+      - "Report includes a formatted metric table"
+      - "Table includes current period value, prior year value, and YoY change column"
+      - "Table covers at least 5 of the 8 standard metrics"
+      - "Report is 500–800 words"
+      - "Report includes a 'What This Means for Sellers' section"
+      - "Report includes a 'What This Means for Buyers' section"
+      - "Report includes agent interpretation section"
+      - "Report footer includes brokerage disclaimer and data caveat"
+
+  # =============================================================================
+  # OUTPUT FORMAT — VERBAL SUMMARY
+  # =============================================================================
+
+  - id: tc-015
+    name: "Verbal summary is meeting-ready — conversational bullets, no jargon"
+    category: output-format-verbal
+    priority: high
+    tags: [output-format-verbal, output-structure]
+    input:
+      prompt: "Noblesville current month, verbal summary, I have a listing appointment in 30 minutes"
+      context: "Working as david-park-c21-scheetz"
+    assertions:
+      - "Output is 5–7 bullet points"
+      - "Language is conversational, avoids jargon (no 'basis points', 'absorption coefficient', etc.)"
+      - "Includes a market condition label in plain English"
+      - "Includes at least one price stat with context"
+      - "Includes DOM stat"
+      - "Includes seasonal framing relevant to current month"
+      - "Includes a bottom-line sentence framed for a seller client"
+
+  # =============================================================================
+  # COUNTY CONTEXT — Correct local market framing
+  # =============================================================================
+
+  - id: tc-016
+    name: "Hamilton County report notes school district premium, not just county average"
+    category: county-context
+    priority: high
+    tags: [county-context, local-nuance]
+    input:
+      prompt: "Hamilton County market update for buyers considering Carmel"
+      context: "Working as sarah-chen-fc-tucker"
+    assertions:
+      - "Output notes that county-level median may not reflect Carmel Clay Schools territory pricing"
+      - "Output provides or references Carmel-specific price data, not just county average"
+      - "Output does not present county median as equivalent to Carmel median"
+
+  - id: tc-017
+    name: "Johnson County report distinguishes Center Grove premium from county average"
+    category: county-context
+    priority: medium
+    tags: [county-context, local-nuance]
+    input:
+      prompt: "Johnson County market update, buyer considering Center Grove area"
+      context: "Working as jennifer-hartley-c21-scheetz"
+    assertions:
+      - "Output notes Center Grove Community Schools creates a price premium within the county"
+      - "Output notes school district boundaries do not follow city limits"
+      - "Output recommends verifying school district assignment by address"
+
+  - id: tc-018
+    name: "Seasonal framing is correct for the reporting month"
+    category: county-context
+    priority: medium
+    tags: [county-context, seasonal-patterns]
+    input:
+      prompt: "Fishers January 2026 market update"
+      context: "Working as tyler-okonkwo-remax-advanced"
+    assertions:
+      - "Output notes that January is seasonally the slowest month in Central Indiana"
+      - "Output does not frame low January inventory as unusual market weakness"
+      - "Output contextualizes January stats against the upcoming spring surge"
+
+  # =============================================================================
+  # NEW CONSTRUCTION CONTEXT
+  # =============================================================================
+
+  - id: tc-019
+    name: "Westfield report flags new construction impact on inventory stats"
+    category: new-construction-context
+    priority: high
+    tags: [new-construction-context, local-nuance]
+    input:
+      prompt: "Westfield market update, current month"
+      context: "Working as sarah-chen-fc-tucker"
+    assertions:
+      - "Output notes that active builder communities in Westfield may not appear in MLS active inventory"
+      - "Output names at least one active builder (Lennar, M/I Homes, Drees, etc.)"
+      - "Output advises buyers to also consider builder communities not captured in resale stats"
+
+  - id: tc-020
+    name: "New construction vs. resale comparison includes buyer-agent registration note"
+    category: new-construction-context
+    priority: high
+    tags: [new-construction-context, compliance]
+    input:
+      prompt: "Noblesville new construction vs resale comparison for a buyer"
+      context: "Working as marcus-williams-kw-indy-metro-n"
+    assertions:
+      - "Output notes buyer's agent must register buyer on first builder visit for co-op commission to apply"
+      - "Output notes builder contracts are not IAR standard forms"
+      - "Output notes builder negotiation typically on upgrades/incentives, not base price"
+
+  # =============================================================================
+  # DATA CAVEATS — Disclaimer and accuracy requirements
+  # =============================================================================
+
+  - id: tc-021
+    name: "All output formats include data disclaimer"
+    category: data-caveats
+    priority: high
+    tags: [data-caveats, compliance, disclaimer]
+    input:
+      prompt: "Carmel April 2026 market update, social media format"
+      context: "Working as sarah-chen-fc-tucker"
+    assertions:
+      - "Output includes data disclaimer language (accuracy not guaranteed, based on reported closed sales)"
+      - "Output includes brokerage disclaimer from brand-kit.yaml"
+      - "Disclaimer is not omitted even in shorter social media format"
+
+  - id: tc-022
+    name: "Skill refuses to make price prediction without caveat"
+    category: data-caveats
+    priority: high
+    tags: [data-caveats, compliance]
+    input:
+      prompt: "Will Fishers home prices go up this year? Put it in my newsletter."
+      context: "Working as david-park-c21-scheetz"
+    assertions:
+      - "Skill does not state a price prediction as fact"
+      - "If trend context is included, it uses conditional language ('if current trends continue')"
+      - "Output includes a note that past performance does not guarantee future results"
+      - "Skill frames conditions rather than making forward-looking price claims"
+
+  - id: tc-023
+    name: "CMA request redirected to re-cma skill"
+    category: data-caveats
+    priority: medium
+    tags: [data-caveats, skill-routing]
+    input:
+      prompt: "Run a market update on my listing at 4521 Oak Creek Dr Carmel to help with pricing"
+      context: "Working as sarah-chen-fc-tucker"
+    assertions:
+      - "Skill distinguishes between a market report (aggregate trends) and a CMA (specific property valuation)"
+      - "Skill directs agent to /re-cma for property-specific pricing analysis"
+      - "Skill may still offer a general Carmel market report as context, but does not present it as a CMA"

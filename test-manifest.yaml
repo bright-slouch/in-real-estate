@@ -1,0 +1,311 @@
+# Test Manifest: Central Indiana Real Estate Agent Plugin
+# Testing protocol based on dependency hierarchy
+# Run tests in tier order — higher tiers depend on lower tiers passing
+
+plugin_root: "~/Skills/real-estate-plugin"
+
+# =============================================================================
+# TESTING ORDER (Dependency-Based)
+# =============================================================================
+#
+# TIER 0 - Foundation (Test First)
+# Config system, agent registry, reference docs. Everything depends on these.
+#
+# TIER 1 - Core Skills
+# Standalone utilities used across both buying and selling.
+#
+# TIER 2 - Selling Process Skills
+# Depends on Tier 0 config + Tier 1 communication skills.
+#
+# TIER 3 - Buying Process Skills
+# Depends on Tier 0 config + Tier 1 skills + some Tier 2 outputs.
+#
+# TIER 4 - Transaction Skills
+# Depends on upstream skills having produced active transaction context.
+#
+# TIER 5 - Orchestrator
+# Coordinates all. Can't be fully tested until all other tiers pass.
+# =============================================================================
+
+target_skills:
+
+  # TIER 0: Foundation
+  - re-agent-setup        # Config generation, Monday.com registry — everything depends on this
+
+  # TIER 1: Core Skills (test after Tier 0 passes)
+  - re-disclosure-assistant   # Indiana disclosure compliance — referenced by re-listing-prep, re-seller-consultation
+  - re-client-communication   # Communication generator — referenced by most other skills
+  - re-neighborhood-research  # Area research — feeds re-buyer-consultation, re-showing-coordinator
+  - re-market-update          # Market snapshots — standalone, no dependencies
+  - re-news-briefing          # News aggregation — standalone, no dependencies
+
+  # TIER 2: Selling Process Skills (test after Tier 1 passes)
+  - re-seller-consultation    # Depends on: re-disclosure-assistant (agency law), re-client-communication
+  - re-cma                    # Depends on: re-seller-consultation (property details, seller goals)
+  - re-listing-prep           # Depends on: re-cma (property analysis), re-disclosure-assistant
+  - re-listing-creation       # Depends on: re-listing-prep (property details, photos taken)
+  - re-property-marketing     # Depends on: re-listing-creation (descriptions, features)
+  - re-showing-coordinator    # Depends on: re-listing-creation (property details) — also used buyer side
+  - re-open-house             # Depends on: re-property-marketing (promotional content)
+
+  # TIER 3: Buying Process Skills (test after Tier 1 passes)
+  - re-buyer-consultation     # Depends on: re-neighborhood-research, re-client-communication
+  - re-offer-writer           # Depends on: re-buyer-consultation (buyer needs, pre-approval info)
+  - re-negotiation-advisor    # Depends on: context from re-offer-writer or re-seller-consultation
+
+  # TIER 4: Transaction Skills (test after Tier 2 + Tier 3 pass)
+  - re-transaction-manager    # Depends on: accepted offer context from re-offer-writer
+  - re-closing-coordinator    # Depends on: re-transaction-manager (timeline, party contacts)
+
+  # TIER 5: Coordination (test last)
+  - orchestrator              # Coordinates all skills
+
+settings:
+  parallel_execution: false   # Run sequentially for dependency testing
+  stop_on_failure: true        # Stop tier if a skill in it fails
+  token_budget: 150000         # Generous — complex real estate workflows are verbose
+  timeout_seconds: 240         # Allow time for Indiana research lookups
+  baseline_directory: "tests/baselines"
+  regression_threshold_percent: 20
+  report_directory: "tests/reports"
+  report_format: "markdown"
+  verbose: true
+
+test_directories:
+  - "tests"
+  - "re-agent-setup/tests"
+  - "re-disclosure-assistant/tests"
+  - "re-client-communication/tests"
+  - "re-neighborhood-research/tests"
+  - "re-market-update/tests"
+  - "re-news-briefing/tests"
+  - "re-seller-consultation/tests"
+  - "re-cma/tests"
+  - "re-listing-prep/tests"
+  - "re-listing-creation/tests"
+  - "re-property-marketing/tests"
+  - "re-showing-coordinator/tests"
+  - "re-open-house/tests"
+  - "re-buyer-consultation/tests"
+  - "re-offer-writer/tests"
+  - "re-negotiation-advisor/tests"
+  - "re-transaction-manager/tests"
+  - "re-closing-coordinator/tests"
+
+# =============================================================================
+# DEPENDENCY DEFINITIONS
+# =============================================================================
+
+dependencies:
+
+  # Tier 0: no dependencies
+  re-agent-setup: []
+
+  # Tier 1: depend only on agent config being set up
+  re-disclosure-assistant:
+    - re-agent-setup              # Needs agent-profile.yaml for branding output
+  re-client-communication:
+    - re-agent-setup              # Required: agent voice from agent-profile.yaml + email-templates.yaml
+  re-neighborhood-research:
+    - re-agent-setup              # Needed for branded report output
+  re-market-update:
+    - re-agent-setup              # Needed for market-areas.yaml and brand-kit.yaml
+  re-news-briefing:
+    - re-agent-setup              # Needed for market-areas.yaml (personalized feed queries)
+
+  # Tier 2: selling process
+  re-seller-consultation:
+    - re-agent-setup              # Required: all config files for presentation
+    - re-disclosure-assistant     # Referenced: agency law explanation
+    - re-client-communication     # Referenced: communication patterns
+  re-cma:
+    - re-agent-setup              # Required: fee-structure.yaml for net sheet, market-areas.yaml
+    - re-seller-consultation      # Optional: seller goals and property context
+  re-listing-prep:
+    - re-agent-setup              # Required: vendor-network.yaml for photographer/stager
+    - re-cma                      # Optional: property analysis, pricing context
+    - re-disclosure-assistant     # Optional: disclosure-aware prep guidance
+  re-listing-creation:
+    - re-agent-setup              # Required: brand-kit.yaml, agent-profile.yaml
+    - re-listing-prep             # Optional: prep completed, photos taken
+  re-property-marketing:
+    - re-agent-setup              # Required: brand-kit.yaml (colors, hashtags, disclaimers)
+    - re-listing-creation         # Recommended: listing descriptions and features
+  re-showing-coordinator:
+    - re-agent-setup              # Required: agent-profile.yaml, vendor-network.yaml
+    - re-listing-creation         # Optional (listing side): property details
+    - re-neighborhood-research    # Optional (buyer side): area context
+  re-open-house:
+    - re-agent-setup              # Required: brand-kit.yaml for promotional content
+    - re-property-marketing       # Optional: promotional content foundation
+
+  # Tier 3: buying process
+  re-buyer-consultation:
+    - re-agent-setup              # Required: all config for presentation
+    - re-neighborhood-research    # Optional: area context for buyer's target areas
+    - re-client-communication     # Referenced: communication patterns
+  re-offer-writer:
+    - re-agent-setup              # Required: agent identity, fee-structure.yaml
+    - re-buyer-consultation       # Optional (buyer side): buyer needs and pre-approval
+    - re-showing-coordinator      # Optional: property comparison context
+  re-negotiation-advisor:
+    - re-agent-setup              # Required: agent methodology (negotiation style in profile)
+    - re-offer-writer             # Optional: offer context
+    - re-seller-consultation      # Optional (seller side): seller goals and thresholds
+
+  # Tier 4: transaction
+  re-transaction-manager:
+    - re-agent-setup              # Required: all config, vendor-network.yaml
+    - re-offer-writer             # Required: accepted offer terms for deadline calculation
+    - re-client-communication     # Referenced: communication templates
+  re-closing-coordinator:
+    - re-agent-setup              # Required: all config
+    - re-transaction-manager      # Required: timeline, party contacts, open items
+
+  # Tier 5: orchestrator depends on everything
+  orchestrator:
+    - re-agent-setup
+    - re-disclosure-assistant
+    - re-client-communication
+    - re-neighborhood-research
+    - re-market-update
+    - re-news-briefing
+    - re-seller-consultation
+    - re-cma
+    - re-listing-prep
+    - re-listing-creation
+    - re-property-marketing
+    - re-showing-coordinator
+    - re-open-house
+    - re-buyer-consultation
+    - re-offer-writer
+    - re-negotiation-advisor
+    - re-transaction-manager
+    - re-closing-coordinator
+
+# =============================================================================
+# TAG DEFINITIONS
+# =============================================================================
+
+tags:
+  smoke:
+    description: "Quick sanity checks — agent ID, config load, basic workflow"
+    run_first: true
+    priority: critical
+
+  config-load:
+    description: "Tests that verify agent config loads correctly from YAML"
+    priority: critical
+
+  indiana-compliance:
+    description: "Tests that verify Indiana law and MIBOR requirements are correctly applied"
+    priority: critical
+
+  fair-housing:
+    description: "Tests that verify fair housing language compliance in all output"
+    priority: critical
+
+  disclaimer:
+    description: "Tests that verify required legal disclaimers appear in output"
+    priority: critical
+
+  regression:
+    description: "Tests with baselines for change detection"
+    compare_to_baseline: true
+
+  integration:
+    description: "Tests involving multiple skills or external services (Monday.com)"
+    requires_dependencies: true
+
+  cross-skill:
+    description: "Tests that verify upstream skill output flows correctly into downstream skill"
+    priority: high
+
+  output-structure:
+    description: "Verifies output format and required sections are correct"
+    priority: high
+
+  edge-case:
+    description: "Unusual inputs and boundary conditions"
+    priority: medium
+
+  adversarial:
+    description: "Security and prompt injection tests"
+    priority: medium
+
+  performance:
+    description: "Token and time efficiency measurements"
+    iterations: 3
+
+# =============================================================================
+# TEST EXECUTION PROFILES
+# =============================================================================
+
+profiles:
+  quick:
+    description: "Smoke tests only — agent ID, config load, basic workflow"
+    tags: [smoke, config-load]
+    timeout_seconds: 60
+
+  standard:
+    description: "Core functionality — excludes performance and adversarial"
+    exclude_tags: [performance, adversarial]
+    timeout_seconds: 150
+
+  compliance:
+    description: "Indiana compliance and fair housing tests only"
+    tags: [indiana-compliance, fair-housing, disclaimer]
+    timeout_seconds: 90
+
+  full:
+    description: "Complete test suite"
+    tags: ["*"]
+    timeout_seconds: 240
+
+  tier0-only:
+    description: "Foundation only — re-agent-setup config generation"
+    target_skills:
+      - re-agent-setup
+
+  tier1-only:
+    description: "Core skills only (assumes Tier 0 passes)"
+    target_skills:
+      - re-disclosure-assistant
+      - re-client-communication
+      - re-neighborhood-research
+      - re-market-update
+      - re-news-briefing
+
+  selling-only:
+    description: "Selling process skills (assumes Tier 0+1 pass)"
+    target_skills:
+      - re-seller-consultation
+      - re-cma
+      - re-listing-prep
+      - re-listing-creation
+      - re-property-marketing
+      - re-showing-coordinator
+      - re-open-house
+
+  buying-only:
+    description: "Buying process skills (assumes Tier 0+1 pass)"
+    target_skills:
+      - re-buyer-consultation
+      - re-offer-writer
+      - re-negotiation-advisor
+
+  transaction-only:
+    description: "Transaction skills only (assumes all upstream pass)"
+    target_skills:
+      - re-transaction-manager
+      - re-closing-coordinator
+
+  integration-only:
+    description: "Cross-skill handoff tests only"
+    tags: [integration, cross-skill]
+
+exclude_patterns:
+  - "**/deprecated/**"
+  - "**/*_draft*"
+  - "**/.DS_Store"
+  - "**/plan.md"

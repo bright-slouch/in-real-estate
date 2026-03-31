@@ -1,0 +1,324 @@
+# =============================================================================
+# VENDOR NETWORK — Central Indiana Real Estate Agent Plugin
+# =============================================================================
+# The agent's preferred service provider network. Loaded by re-listing-prep,
+# re-transaction-manager, re-closing-coordinator, and re-buyer-consultation.
+#
+# INSTRUCTIONS:
+# - Mark the PRIMARY preferred vendor in each category with primary: true
+# - Include NMLS numbers for all lender contacts — required for compliance
+# - Notes field: any special instructions (e.g., "fast turnaround", "does vacant")
+# - Remove categories not applicable to the agent's market
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# LENDERS
+# -----------------------------------------------------------------------------
+# Preferred mortgage lenders. Include multiple options to cover different buyer types.
+# NMLS numbers are required — verify before adding any lender.
+
+lenders:
+  - name: "[First Last]"
+    company: "[Mortgage Company Name]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@company.com]"
+    nmls: "[XXXXXXX]"               # Individual NMLS number (required)
+    specialty: "[e.g., Conventional, FHA, VA, jumbo]"
+    notes: "[e.g., Fast pre-approval turnaround, great communication with buyers]"
+    primary: true                   # true = first recommendation for this category
+
+  - name: "[First Last]"
+    company: "[Mortgage Company Name]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@company.com]"
+    nmls: "[XXXXXXX]"
+    specialty: "[e.g., First-time buyers, FHA/USDA rural programs]"
+    notes: "[e.g., Patient with first-time buyers, explains options well]"
+    primary: false
+
+  - name: "[First Last]"
+    company: "[Mortgage Company Name]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@company.com]"
+    nmls: "[XXXXXXX]"
+    specialty: "[e.g., VA loans, jumbo, investment loans]"
+    notes: "[e.g., VA loan specialist, competitive rates on jumbo]"
+    primary: false
+
+# -----------------------------------------------------------------------------
+# TITLE COMPANIES
+# -----------------------------------------------------------------------------
+
+title_companies:
+  - name: "[Contact First Last]"
+    company: "[Title Company Name]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@company.com]"
+    address: "[City], IN [ZIP]"
+    specialty: "[e.g., Residential, commercial, new construction]"
+    notes: "[e.g., Good about same-day wire confirmations, responsive on short timelines]"
+    primary: true
+
+  - name: "[Contact First Last]"
+    company: "[Title Company Name]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@company.com]"
+    address: "[City], IN [ZIP]"
+    specialty: "[e.g., Preferred by builder XYZ for new construction]"
+    notes: "[e.g., Use for any seller requesting [specific requirement]]"
+    primary: false
+
+# -----------------------------------------------------------------------------
+# HOME INSPECTORS
+# -----------------------------------------------------------------------------
+# Include multiple inspectors with different specialties where possible.
+
+inspectors:
+  - name: "[First Last]"
+    company: "[Inspection Company]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@company.com]"
+    website: "https://[company].com"
+    certifications:
+      - "InterNACHI Certified"         # or "ASHI Certified"
+    specialty:
+      - "General residential"
+      - "[e.g., Sewer scopes]"
+      - "[e.g., Radon testing]"
+    turnaround_hours: 24               # Report delivery time after inspection
+    notes: "[e.g., Thorough but not alarmist. Good with older homes.]"
+    primary: true
+
+  - name: "[First Last]"
+    company: "[Inspection Company]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@company.com]"
+    certifications:
+      - "InterNACHI Certified"
+    specialty:
+      - "General residential"
+      - "[e.g., Pool inspections]"
+      - "[e.g., Commercial]"
+    turnaround_hours: 48
+    notes: "[e.g., Good for unique/rural properties. Does well/septic inspections.]"
+    primary: false
+
+# -----------------------------------------------------------------------------
+# PHOTOGRAPHERS / VIDEOGRAPHERS
+# -----------------------------------------------------------------------------
+
+photographers:
+  - name: "[First Last]"
+    company: "[Photography Company or Freelance]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@company.com]"
+    website: "https://[portfolio].com"
+    services:
+      - "HDR interior/exterior photography"
+      - "Twilight photos"
+      - "Aerial/drone photography"     # FAA Part 107 certified?
+      - "[e.g., 3D Matterport virtual tours]"
+      - "[e.g., Video walkthrough]"
+    turnaround_hours: 48               # Edited photos delivered in X hours
+    pricing_range: "[$XXX-$XXX]"      # Approximate price range for standard shoot
+    notes: "[e.g., Best in class for vacant homes. Schedule 48 hrs out.]"
+    primary: true
+
+  - name: "[First Last]"
+    company: "[Company]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@company.com]"
+    services:
+      - "HDR photography"
+      - "[e.g., Faster turnaround option]"
+    turnaround_hours: 24
+    pricing_range: "[$XXX-$XXX]"
+    notes: "[e.g., Good for price-sensitive listings. Faster turnaround.]"
+    primary: false
+
+# -----------------------------------------------------------------------------
+# STAGERS
+# -----------------------------------------------------------------------------
+
+stagers:
+  - name: "[First Last]"
+    company: "[Staging Company]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@company.com]"
+    services:
+      - "Occupied home staging consultation"
+      - "Vacant home staging (furniture rental)"
+      - "[e.g., Virtual staging]"
+    pricing_range: "[$XXX-$X,XXX]"   # Consultation vs full vacant staging vary widely
+    notes: "[e.g., Strong in luxury market. Good for vacant properties.]"
+    primary: true
+
+# -----------------------------------------------------------------------------
+# CONTRACTORS (by trade)
+# -----------------------------------------------------------------------------
+
+contractors:
+  handyman:
+    - name: "[First Last]"
+      company: "[Company or Freelance]"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      email: "[name@company.com]"
+      specialty: "General repairs, punch list items, minor cosmetic work"
+      licensed: true                  # Licensed in Indiana?
+      insured: true
+      notes: "[e.g., Responsive, reliable for pre-listing punch lists. No large jobs.]"
+      primary: true
+
+  painting:
+    - name: "[First Last]"
+      company: "[Company]"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      email: "[name@company.com]"
+      specialty: "Interior/exterior painting, color consultation"
+      licensed: true
+      insured: true
+      notes: "[e.g., Professional grade. 5-day interior turnaround on average home.]"
+      primary: true
+
+  flooring:
+    - name: "[First Last]"
+      company: "[Company]"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      email: "[name@company.com]"
+      specialty: "[e.g., Hardwood refinishing, LVP installation, carpet]"
+      notes: "[e.g., Good pricing on hardwood refinish. 2-week lead time typical.]"
+      primary: true
+
+  hvac:
+    - name: "[First Last]"
+      company: "[Company]"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      email: "[name@company.com]"
+      specialty: "HVAC service, tune-up, repair, replacement"
+      licensed: true
+      insured: true
+      notes: "[e.g., Service inspections for pre-listing tune-ups. Fast quotes.]"
+      primary: true
+
+  plumbing:
+    - name: "[First Last]"
+      company: "[Company]"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      email: "[name@company.com]"
+      specialty: "Residential plumbing, inspection repairs"
+      licensed: true
+      insured: true
+      primary: true
+
+  electrical:
+    - name: "[First Last]"
+      company: "[Company]"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      email: "[name@company.com]"
+      specialty: "Residential electrical, panel upgrades, inspection items"
+      licensed: true
+      insured: true
+      primary: true
+
+  roofing:
+    - name: "[First Last]"
+      company: "[Company]"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      email: "[name@company.com]"
+      specialty: "Residential roofing, insurance claims, inspection repairs"
+      notes: "[e.g., Does complimentary roof inspections for listings. Works with insurance.]"
+      primary: true
+
+# -----------------------------------------------------------------------------
+# APPRAISERS
+# -----------------------------------------------------------------------------
+# Note: Do not influence appraiser selection in a transaction — this list is for
+# pre-listing appraisal referrals only. Never refer an appraiser for an active sale.
+
+appraisers:
+  - name: "[First Last]"
+    company: "[Company]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@company.com]"
+    certifications: "State Certified Residential Appraiser, Indiana"
+    specialty: "[e.g., Residential, $200K-$800K range]"
+    notes: "For PRE-LISTING appraisals only. Never refer for active transaction appraisals."
+    primary: true
+
+# -----------------------------------------------------------------------------
+# REAL ESTATE ATTORNEYS
+# -----------------------------------------------------------------------------
+
+attorneys:
+  - name: "[First Last]"
+    company: "[Law Firm]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@firm.com]"
+    specialty: "[e.g., Real estate closings, title disputes, landlord-tenant]"
+    notes: "[e.g., Good for complex situations, estate sales, title issues]"
+    primary: true
+
+# -----------------------------------------------------------------------------
+# MOVING COMPANIES
+# -----------------------------------------------------------------------------
+
+movers:
+  - name: "[Company Name]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[info@company.com]"
+    website: "https://[company].com"
+    specialty: "[e.g., Local moves, long-distance, senior moves]"
+    notes: "[e.g., Licensed, insured. Give at least 2 weeks notice in busy season.]"
+    primary: true
+
+  - name: "[Company Name]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    specialty: "[e.g., Budget-conscious option, POD delivery]"
+    primary: false
+
+# -----------------------------------------------------------------------------
+# CLEANING SERVICES
+# -----------------------------------------------------------------------------
+
+cleaners:
+  - name: "[Company Name]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[info@company.com]"
+    services:
+      - "Pre-listing deep clean"
+      - "Move-out cleaning"
+      - "[e.g., Window cleaning]"
+    notes: "[e.g., 48-hour notice required. Does windows separately.]"
+    primary: true
+
+# -----------------------------------------------------------------------------
+# OTHER SPECIALISTS
+# -----------------------------------------------------------------------------
+
+other:
+  home_warranty:
+    - company: "[Home Warranty Company]"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      website: "https://[company].com"
+      plan_name: "[e.g., Buyer's Edge 1-Year Plan]"
+      notes: "[e.g., Preferred for buyer-side warranty on older homes]"
+      primary: true
+
+  septic:
+    - name: "[Company]"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      specialty: "Septic inspection, pumping, repair — for rural properties"
+      primary: true
+
+  well:
+    - name: "[Company]"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      specialty: "Well inspection and water testing — for rural properties"
+      primary: true
+
+  landscaping:
+    - name: "[Company]"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      specialty: "Curb appeal enhancement, mowing, mulch, cleanup"
+      notes: "[e.g., Good for quick curb appeal jobs pre-listing]"
+      primary: true

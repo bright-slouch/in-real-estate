@@ -1,0 +1,244 @@
+test_suite: orchestrator
+description: End-to-end routing, workflow coordination, agent identification, data passing, and error handling for the Real Estate Orchestrator
+version: "1.0"
+
+cases:
+
+  # AGENT IDENTIFICATION
+
+  - id: orch-001
+    category: agent_identification
+    description: Identify agent by full name
+    input: "I'm working as Jane Smith today"
+    expected_behavior:
+      - Looks up "Jane Smith" in Monday.com Real Estate Agent Registry
+      - Retrieves slug (e.g., jane-smith-fc-tucker)
+      - Loads config/jane-smith-fc-tucker/agent-profile.yaml
+      - Displays: agent name, brokerage, license #, MLS ID, primary markets
+    pass_criteria:
+      - Agent identity confirmed without asking for more info
+      - Config loaded and displayed to user
+
+  - id: orch-002
+    category: agent_identification
+    description: Identify agent by email address
+    input: "Set up for jsmith@fctucker.com"
+    expected_behavior:
+      - Looks up by email column in Monday.com board
+      - Resolves to correct slug and loads config
+    pass_criteria:
+      - Email lookup works without asking for name separately
+
+  - id: orch-003
+    category: agent_identification
+    description: Identify agent by slug directly
+    input: "Working as jane-smith-fc-tucker"
+    expected_behavior:
+      - Skips Monday.com lookup
+      - Loads config/jane-smith-fc-tucker/ directly
+    pass_criteria:
+      - Config loads from slug without registry lookup
+
+  - id: orch-004
+    category: agent_identification
+    description: Agent not found in registry
+    input: "I'm working as Bob Newhart"
+    expected_behavior:
+      - Monday.com lookup finds no match
+      - Presents 3 options: search by email, search by slug, run re-agent-setup
+    pass_criteria:
+      - Does not crash or proceed without agent identity
+      - Offers actionable next steps
+
+  # WORKFLOW ROUTING
+
+  - id: orch-005
+    category: workflow_routing
+    description: Route new listing to Workflow 1
+    input: "I have a new listing — 8812 Maple Ridge Lane, Fishers. Listing appointment tomorrow."
+    agent_context: jane-smith-fc-tucker loaded
+    expected_behavior:
+      - Maps to New Listing Setup Workflow (Workflow 1)
+      - Confirms before starting Stage 1 (re-seller-consultation)
+      - Displays 8-stage workflow overview
+    pass_criteria:
+      - Workflow 1 initiated, not individual skill
+      - Permission confirmation shown before Stage 1
+
+  - id: orch-006
+    category: workflow_routing
+    description: Route new buyer to Workflow 2
+    input: "New buyer client — the Johnsons. Looking in Hamilton County, budget $450K-$550K."
+    agent_context: jane-smith-fc-tucker loaded
+    expected_behavior:
+      - Maps to New Buyer Intake Workflow (Workflow 2)
+      - Confirms before starting Stage 1 (re-buyer-consultation)
+      - Notes first-time buyer handling if indicated
+    pass_criteria:
+      - Workflow 2 initiated
+      - Buyer context captured for downstream skills
+
+  - id: orch-007
+    category: workflow_routing
+    description: Route accepted offer to Workflow 4
+    input: "We went under contract yesterday on 3301 Cherry Creek Blvd — close date April 30."
+    agent_context: jane-smith-fc-tucker loaded
+    expected_behavior:
+      - Maps to Contract to Close Workflow (Workflow 4)
+      - Routes to re-transaction-manager Stage 1 (deadline calendar)
+      - Requests: acceptance date, side (buyer/seller), key parties
+    pass_criteria:
+      - Workflow 4 initiated
+      - Transaction setup questions asked if info not provided
+
+  - id: orch-008
+    category: workflow_routing
+    description: Route inspection issues to re-negotiation-advisor
+    input: "Inspection came back with $24K of repair requests on our Westfield listing."
+    agent_context: jane-smith-fc-tucker loaded
+    expected_behavior:
+      - Maps to re-negotiation-advisor (not a full workflow)
+      - Identifies: seller side, inspection response scenario
+      - Passes context: seller side, $24K, Westfield address
+    pass_criteria:
+      - Directly routes to re-negotiation-advisor
+      - Identifies seller side correctly
+
+  - id: orch-009
+    category: workflow_routing
+    description: Route morning briefing to Workflow 5
+    input: "Morning briefing please"
+    agent_context: jane-smith-fc-tucker loaded
+    expected_behavior:
+      - Maps to Morning Briefing Workflow (Workflow 5)
+      - Routes to re-news-briefing first
+      - Offers market update for agent's primary areas after
+    pass_criteria:
+      - News briefing runs first
+      - Market update offered (not forced)
+
+  - id: orch-010
+    category: workflow_routing
+    description: Ambiguous request displays full menu
+    input: "I'm not sure what I need help with today"
+    agent_context: jane-smith-fc-tucker loaded
+    expected_behavior:
+      - Displays full menu: 5 guided workflows + 18 individual skills
+      - Does not guess or force a route
+    pass_criteria:
+      - Full menu displayed
+      - No skill invoked without user selection
+
+  # MISSING CONFIG / ERROR HANDLING
+
+  - id: orch-011
+    category: error_handling
+    description: Missing config files after registry lookup
+    input: "Working as jane-smith-fc-tucker"
+    setup: config/jane-smith-fc-tucker/ exists but fee-structure.yaml and team-structure.yaml are missing
+    expected_behavior:
+      - Identifies what's loaded and what's missing
+      - Lists missing files explicitly
+      - Offers: run re-agent-setup to complete OR proceed with limitations
+    pass_criteria:
+      - Missing files named explicitly
+      - Does not silently proceed as if complete
+
+  - id: orch-012
+    category: error_handling
+    description: Missing upstream skill output
+    input: "Run re-listing-creation for 8812 Maple Ridge Lane"
+    agent_context: jane-smith-fc-tucker loaded
+    setup: re-cma has not been run for this property
+    expected_behavior:
+      - Flags that re-cma output (pricing) is missing
+      - Offers: run re-cma first OR proceed without pricing context
+      - Does not refuse — offers the choice
+    pass_criteria:
+      - Dependency explained clearly
+      - User given the choice to proceed or backfill
+
+  - id: orch-013
+    category: error_handling
+    description: Incomplete transaction context for Contract to Close
+    input: "Set up transaction tracking for our new contract"
+    agent_context: jane-smith-fc-tucker loaded
+    setup: no property address, acceptance date, or close date provided
+    expected_behavior:
+      - Asks for: property address, acceptance date, close date, side, key parties
+      - Does not start re-transaction-manager until minimum context collected
+    pass_criteria:
+      - Required context collected before routing to skill
+      - Questions asked in a single clear prompt (not one at a time)
+
+  # CROSS-SKILL DATA PASSING
+
+  - id: orch-014
+    category: cross_skill_data
+    description: Seller consultation data flows into CMA
+    input: Complete Stage 1 (seller consultation) then move to Stage 2 (CMA)
+    agent_context: jane-smith-fc-tucker loaded
+    expected_behavior:
+      - After re-seller-consultation completes, extracts: seller price expectation, timeline, motivation, property condition notes
+      - Packages in handoff format and passes to re-cma
+      - User not asked to re-enter this information
+    pass_criteria:
+      - Handoff block shown before re-cma starts
+      - Seller's price expectation visible in handoff data
+
+  - id: orch-015
+    category: cross_skill_data
+    description: CMA price flows into listing creation
+    input: After CMA recommends $519K, proceed to re-listing-creation
+    agent_context: jane-smith-fc-tucker loaded
+    expected_behavior:
+      - Passes recommended price to re-listing-creation
+      - Listing creation uses $519K (not a generic placeholder)
+      - Competitive positioning language from CMA included
+    pass_criteria:
+      - CMA price visible in handoff to re-listing-creation
+      - No re-entry of price required
+
+  - id: orch-016
+    category: cross_skill_data
+    description: Buyer consultation data flows into neighborhood research
+    input: After buyer consultation for Johnsons, proceed to neighborhood research
+    agent_context: jane-smith-fc-tucker loaded
+    expected_behavior:
+      - Extracts from buyer consultation: target areas, school priorities, commute destination, budget
+      - Passes to re-neighborhood-research without re-asking
+    pass_criteria:
+      - Target areas from consultation used in neighborhood research
+      - Budget and school priorities carried forward
+
+  # MID-TRANSACTION PICKUP
+
+  - id: orch-017
+    category: transaction_state
+    description: Mid-transaction pickup with multiple active deals
+    input: "I've got three deals — Maple Ridge (closing May 15, under contract), Oak Creek (active listing), and the Johnson buyer is ready to offer. What should I focus on?"
+    agent_context: jane-smith-fc-tucker loaded
+    expected_behavior:
+      - Assesses all three transactions
+      - Calculates days to close for May 15 deal → flags nearest deadline
+      - Prioritizes: (1) imminent deadline on Maple Ridge, (2) Johnson offer, (3) Oak Creek showing review
+      - Returns prioritized action list, not just raw status
+    pass_criteria:
+      - All three deals addressed
+      - Priority order justified (deadline-driven)
+      - Recommended skill for each action
+
+  - id: orch-018
+    category: transaction_state
+    description: Switching between buyer and seller transactions mid-session
+    input: After finishing showing feedback update for Windermere listing, say: "Now I need to help the Hendersons write an offer on a Geist property."
+    agent_context: mike-davis-kw loaded
+    expected_behavior:
+      - Retains Windermere context in session memory
+      - Cleanly switches context to Henderson buyer
+      - Routes to re-offer-writer with Henderson buyer context
+      - Notes Geist geographic context (Marion/Hamilton overlap)
+    pass_criteria:
+      - No loss of Windermere context
+      - Henderson offer workflow starts correctly
+      - Agent not asked to re-identify themselves
