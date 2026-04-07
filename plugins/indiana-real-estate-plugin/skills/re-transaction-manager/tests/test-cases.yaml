@@ -1,0 +1,343 @@
+---
+# re-transaction-manager Test Cases
+# 17 cases across 6 categories
+
+test_suite: re-transaction-manager
+version: "1.0"
+last_updated: "2026-03-31"
+
+categories:
+  - config-loading
+  - deadline-calendar
+  - google-calendar
+  - coordination-emails
+  - issue-management
+  - amendment-tracking
+
+tests:
+
+  # -----------------------------------------------------------------------
+  # CONFIG LOADING
+  # -----------------------------------------------------------------------
+
+  - id: tc-001
+    name: "Config loads and vendor contacts auto-populate"
+    category: config-loading
+    priority: high
+    tags: [config, vendor-network, auto-populate]
+    input:
+      prompt: "/re-transaction-manager new transaction setup — Property: 4218 Buttonwood Dr, Fishers. Accepted April 2. Close May 2. Slug: sarah-jones-fc-tucker"
+      context: "vendor-network.yaml has preferred lender Ruoff Mortgage; title company Stewart Title"
+    assertions:
+      - "Skill loads agent-profile.yaml before generating any output"
+      - "Vendor-network.yaml is consulted; preferred lender contact info auto-populated in coordination email"
+      - "Preferred title company contact info auto-populated"
+      - "Agent name and contact info used in output, not generic placeholder"
+      - "If vendor is not listed in vendor-network.yaml, skill prompts agent to provide the contact"
+
+  - id: tc-002
+    name: "No slug provided — skill asks before proceeding"
+    category: config-loading
+    priority: high
+    tags: [config, agent-identification]
+    input:
+      prompt: "/re-transaction-manager new transaction — 4218 Buttonwood Dr, Fishers. Close May 2."
+      context: "No slug provided in prompt"
+    assertions:
+      - "Skill does not proceed without identifying the agent"
+      - "Skill asks for agent name, email, or slug"
+      - "Skill explains it needs to load the agent's vendor and team config"
+
+  # -----------------------------------------------------------------------
+  # DEADLINE CALENDAR
+  # -----------------------------------------------------------------------
+
+  - id: tc-003
+    name: "30-day close deadline calendar — all dates correctly computed"
+    category: deadline-calendar
+    priority: high
+    tags: [deadline-calendar, date-math, 30-day]
+    input:
+      prompt: >
+        /re-transaction-manager new transaction setup — Property: 4218 Buttonwood Dr.
+        Accepted April 2. Close May 2. Inspection 10 days. Financing 21 days.
+        Appraisal 21 days. Earnest money 3 business days. Slug: sarah-jones-fc-tucker
+      context: "Standard 30-day conventional financed transaction"
+    assertions:
+      - "Earnest money deadline is April 7 (3 business days from April 2, skipping weekends)"
+      - "Inspection deadline is April 12 (10 calendar days from April 2)"
+      - "Financing contingency deadline is April 23 (21 calendar days from April 2)"
+      - "Appraisal contingency deadline is April 23"
+      - "Final walkthrough is listed as approximately April 30 (2 days before close)"
+      - "Closing date is May 2"
+      - "Calendar correctly identifies if any deadline falls on a Sunday or holiday"
+
+  - id: tc-004
+    name: "Inspection deadline on Sunday — agent is notified"
+    category: deadline-calendar
+    priority: high
+    tags: [deadline-calendar, calendar-days, Sunday, Indiana]
+    input:
+      prompt: >
+        /re-transaction-manager new transaction — Accepted April 3 (Friday). 10-day
+        inspection period. Slug: sarah-jones-fc-tucker
+      context: "April 13 (Day 10) falls on a Sunday"
+    assertions:
+      - "Skill identifies that April 13 (inspection deadline) falls on a Sunday"
+      - "Skill explicitly notes that the deadline is still April 13 — Indiana inspection periods use calendar days, no extension for weekends"
+      - "Agent is advised to have the inspection done and response ready by Sunday end of day"
+      - "Calendar event is set for April 13"
+
+  - id: tc-005
+    name: "FHA/VA transaction gets 45-day timeline warning"
+    category: deadline-calendar
+    priority: high
+    tags: [deadline-calendar, FHA, VA, timeline]
+    input:
+      prompt: >
+        /re-transaction-manager new transaction — FHA buyer, 3.5% down. Close date is 30 days
+        from acceptance. Slug: sarah-jones-fc-tucker
+      context: "FHA buyer with a 30-day close target — typically insufficient"
+    assertions:
+      - "Skill flags that FHA loans typically require 45–50 days from acceptance to close"
+      - "Skill notes that a 30-day close with FHA creates risk of a closing date extension"
+      - "Skill suggests agent confirm with lender whether 30 days is realistic for this specific buyer's file"
+      - "Skill still generates the calendar with the 30-day dates but marks the close date as 'HIGH RISK'"
+
+  - id: tc-006
+    name: "Cash deal — simplified calendar, no financing/appraisal events"
+    category: deadline-calendar
+    priority: medium
+    tags: [deadline-calendar, cash, simplified]
+    input:
+      prompt: >
+        /re-transaction-manager new transaction — cash buyer, 15-day close, 5-day inspection.
+        No financing or appraisal contingency. Slug: lisa-chen-kw
+      context: "All-cash transaction with a compressed timeline"
+    assertions:
+      - "Calendar contains no financing contingency deadline (not applicable)"
+      - "Calendar contains no appraisal contingency deadline (not applicable)"
+      - "Inspection deadline is correctly set at Day 5 (calendar days)"
+      - "Title commitment deadline is flagged as critical given only 4 days remain after inspection deadline"
+      - "Closing day is flagged as requiring same-day deed recording before key handoff"
+
+  # -----------------------------------------------------------------------
+  # GOOGLE CALENDAR
+  # -----------------------------------------------------------------------
+
+  - id: tc-007
+    name: "Google Calendar events created for all critical deadlines"
+    category: google-calendar
+    priority: high
+    tags: [google-calendar, gcal, events]
+    input:
+      prompt: >
+        /re-transaction-manager new transaction setup — 4218 Buttonwood Dr. Accepted April 2.
+        Close May 2. Standard 30-day conventional. Slug: sarah-jones-fc-tucker
+      context: "New transaction requiring full calendar setup"
+    assertions:
+      - "gcal_create_event is called for earnest money deadline"
+      - "gcal_create_event is called for inspection deadline (marked high priority)"
+      - "gcal_create_event is called for inspection response deadline"
+      - "gcal_create_event is called for financing contingency (marked high priority)"
+      - "gcal_create_event is called for appraisal contingency (marked high priority)"
+      - "gcal_create_event is called for title commitment expected date"
+      - "gcal_create_event is called for Closing Disclosure delivery (3 business days before close)"
+      - "gcal_create_event is called for final walkthrough"
+      - "gcal_create_event is called for closing day"
+      - "Each event includes party contact info in the description"
+      - "Each event has 1-day and 1-hour reminders set"
+
+  - id: tc-008
+    name: "Amendment triggers calendar event update, not duplicate creation"
+    category: google-calendar
+    priority: high
+    tags: [google-calendar, amendment, update]
+    input:
+      prompt: >
+        /re-transaction-manager amendment — 4218 Buttonwood Dr. Financing contingency extended
+        from April 23 to April 30. IAR Form 157 executed. Slug: sarah-jones-fc-tucker
+      context: "Financing contingency extended by one week via amendment"
+    assertions:
+      - "gcal_update_event is called to update the financing contingency event (not gcal_create_event)"
+      - "Skill checks for existing events with gcal_list_events before creating duplicates"
+      - "Updated event shows new date (April 30) and notes 'Extended via Amendment #[X]'"
+      - "All party contacts are preserved in the updated event description"
+
+  # -----------------------------------------------------------------------
+  # COORDINATION EMAILS
+  # -----------------------------------------------------------------------
+
+  - id: tc-009
+    name: "Three coordination emails generated at transaction setup"
+    category: coordination-emails
+    priority: high
+    tags: [coordination-emails, lender, title, other-agent]
+    input:
+      prompt: >
+        /re-transaction-manager new transaction setup — 4218 Buttonwood Dr. Lender: Ruoff.
+        Title: Stewart Title. Other agent: Tom Bradley, RE/MAX. Slug: sarah-jones-fc-tucker
+      context: "Full new transaction setup"
+    assertions:
+      - "Email to lender includes: property address, accepted date, buyer's name, closing date, inspection deadline, financing contingency deadline"
+      - "Email to lender asks for expected appraisal order date and timeline"
+      - "Email to title includes: property address, both party names, lender contact, target close date"
+      - "Email to other agent acknowledges the executed contract and confirms earnest money logistics"
+      - "All emails use agent's voice/tone from agent-profile.yaml"
+      - "All emails include agent's signature from email-templates.yaml"
+
+  - id: tc-010
+    name: "Weekly update populates template with specific details"
+    category: coordination-emails
+    priority: high
+    tags: [weekly-update, template, status]
+    input:
+      prompt: >
+        /re-transaction-manager weekly update — 4218 Buttonwood Dr, Fishers.
+        Week 2. Inspection complete, $9,500 credit agreed. Appraisal ordered April 16.
+        No issues. Slug: sarah-jones-fc-tucker
+      context: "Second week of the transaction; smooth progress"
+    assertions:
+      - "Skill populates templates/weekly-status-update.md with actual transaction details"
+      - "Completed items this week includes the inspection resolution and credit"
+      - "Upcoming deadlines section shows appraisal contingency deadline (April 23)"
+      - "Client action items section is populated (e.g., confirm insurance binder)"
+      - "Output is a ready-to-send email, not a template with unfilled placeholders"
+      - "Agent's signature block from email-templates.yaml is included"
+
+  # -----------------------------------------------------------------------
+  # ISSUE MANAGEMENT
+  # -----------------------------------------------------------------------
+
+  - id: tc-011
+    name: "Inspection extension — draft email + amendment language + calendar update"
+    category: issue-management
+    priority: high
+    tags: [inspection-extension, amendment, calendar]
+    input:
+      prompt: >
+        /re-transaction-manager inspection extension — 4218 Buttonwood Dr.
+        Current deadline April 12. Need 5-day extension to April 17.
+        Structural engineer needs to inspect. Slug: sarah-jones-fc-tucker
+      context: "Inspector flagged a foundation concern; structural engineer needed"
+    assertions:
+      - "Draft email to other agent requesting extension is provided"
+      - "Email explains the reason professionally without undermining buyer's position"
+      - "IAR Form 157 amendment language is provided for agent to paste into Dotloop/ZipForms"
+      - "Skill notes: if seller refuses extension, buyer must respond by original April 12 deadline or contingency waives"
+      - "gcal_update_event call to move inspection deadline from April 12 to April 17"
+
+  - id: tc-012
+    name: "Appraisal delay with closing date at risk — action plan generated"
+    category: issue-management
+    priority: high
+    tags: [appraisal-delay, closing-risk, action-plan]
+    input:
+      prompt: >
+        /re-transaction-manager appraisal delay — 4218 Buttonwood Dr.
+        Appraisal ordered 12 days ago. Not yet completed. Close date is in 14 days.
+        Financing contingency deadline is in 5 days. Slug: sarah-jones-fc-tucker
+      context: "Appraisal behind schedule; multiple deadlines at risk"
+    assertions:
+      - "Skill generates a numbered action plan, not just generic advice"
+      - "Step 1 is always: contact lender today to confirm appraisal appointment date"
+      - "Skill identifies that financing contingency (5 days) will expire before appraisal is likely done"
+      - "Skill drafts extension request for both appraisal and financing contingency deadlines"
+      - "Skill notes that rate lock may expire if close extends significantly"
+      - "Skill does NOT suggest buyer waive appraisal or financing contingency as a solution"
+
+  - id: tc-013
+    name: "Title issue — closing delay and all-party communication"
+    category: issue-management
+    priority: high
+    tags: [title-issue, lien, closing-delay]
+    input:
+      prompt: >
+        /re-transaction-manager title issue — 4218 Buttonwood Dr. Title found a $4,200
+        HOA special assessment lien that must be paid before closing. Close is 10 days away.
+        Slug: sarah-jones-fc-tucker
+      context: "HOA special assessment lien discovered during title search"
+    assertions:
+      - "Skill identifies who is responsible for paying the lien (seller, typically)"
+      - "Skill generates communication to listing agent explaining the issue and requesting seller resolution"
+      - "Skill notes the lien must be paid/released before closing — this is a requirement, not optional"
+      - "Skill drafts closing date extension if lien resolution may take longer than 10 days"
+      - "Skill advises buyer (via agent) to stay the course — this is a resolvable title issue"
+      - "Legal disclaimer: advise agent to work through title company's underwriter on resolution"
+
+  - id: tc-014
+    name: "Financing falls through post-contingency — earnest money guidance"
+    category: issue-management
+    priority: high
+    tags: [financing-failure, earnest-money, post-contingency]
+    input:
+      prompt: >
+        /re-transaction-manager financing fell through — 4218 Buttonwood Dr. Financing
+        contingency expired April 23. Today is April 29. Buyer lost their job.
+        Earnest money: $7,000. Slug: sarah-jones-fc-tucker
+      context: "Buyer outside financing contingency protection; earnest money at risk"
+    assertions:
+      - "Skill confirms financing contingency has expired — buyer is outside protected window"
+      - "Skill advises agent to consult managing broker BEFORE taking any action on earnest money"
+      - "Skill does NOT tell agent to promise earnest money to either party"
+      - "Skill explains the three earnest money paths: mutual release, seller pursues as LD, interpleader"
+      - "Skill recommends mutual release as the fastest path to resolution"
+      - "Draft communication to other agent is professional and does not commit to an earnest money outcome"
+      - "Legal disclaimer is prominent"
+
+  - id: tc-015
+    name: "Financing extension request — seller risk explained"
+    category: issue-management
+    priority: high
+    tags: [financing-extension, seller-risk, contingency]
+    input:
+      prompt: >
+        /re-transaction-manager financing extension needed — 4218 Buttonwood Dr.
+        Financing contingency deadline tomorrow. Lender needs 7 more days.
+        Underwriter has one condition to clear. Slug: sarah-jones-fc-tucker
+      context: "Financing contingency expiring tomorrow; lender needs more time"
+    assertions:
+      - "Skill drafts financing contingency extension request to other agent immediately"
+      - "Skill explains what the lender's condition is (to the extent agent provides it)"
+      - "Skill explicitly states: seller has the right to refuse the extension"
+      - "If seller refuses: buyer's position on earnest money is at risk if financing doesn't close by tomorrow"
+      - "Skill recommends sending the extension request today, not waiting until the deadline"
+
+  # -----------------------------------------------------------------------
+  # AMENDMENT TRACKING
+  # -----------------------------------------------------------------------
+
+  - id: tc-016
+    name: "Amendment distributed to lender and title"
+    category: amendment-tracking
+    priority: high
+    tags: [amendment, lender-notification, title-notification]
+    input:
+      prompt: >
+        /re-transaction-manager amendment — 4218 Buttonwood Dr. Amendment #1: $9,500
+        closing cost credit to buyer. Executed April 16. Slug: sarah-jones-fc-tucker
+      context: "Inspection credit amendment executed; must be distributed"
+    assertions:
+      - "Skill identifies that a closing cost credit affects the Closing Disclosure"
+      - "Lender must receive the amendment immediately so CD is prepared correctly"
+      - "Title company must receive the amendment to update the settlement statement"
+      - "Skill provides draft email to lender noting the credit amount and that it should appear on CD"
+      - "Skill confirms the $9,500 credit is within conventional lending concession limits (checked against loan type and LTV)"
+      - "Amendment log entry is generated for the transaction file"
+
+  - id: tc-017
+    name: "Legal disclaimer present in all outputs"
+    category: amendment-tracking
+    priority: high
+    tags: [disclaimer, legal, guidance]
+    input:
+      prompt: >
+        /re-transaction-manager new transaction setup — 4218 Buttonwood Dr, Fishers.
+        Full setup with all standard terms. Slug: sarah-jones-fc-tucker
+      context: "Any complete transaction management output"
+    assertions:
+      - "Legal disclaimer is present in the output"
+      - "Disclaimer states dates are generated from agent-provided terms and must be verified against the executed agreement"
+      - "Disclaimer states that missed deadlines can have significant legal and financial consequences"
+      - "Output recommends consulting managing broker for earnest money and default situations"
+      - "Output does not present the deadline calendar as a substitute for reading the actual contract"

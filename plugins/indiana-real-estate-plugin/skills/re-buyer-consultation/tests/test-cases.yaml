@@ -1,0 +1,254 @@
+---
+# re-buyer-consultation Test Cases
+# 14 cases across 7 categories
+
+test_suite: re-buyer-consultation
+version: "1.0"
+last_updated: "2026-03-30"
+
+categories:
+  - config-loading
+  - buyer-agency-agreement
+  - financing-education
+  - discovery-questionnaire
+  - search-criteria
+  - special-scenarios
+  - disclaimer-compliance
+
+tests:
+
+  # -----------------------------------------------------------------------
+  # CONFIG LOADING
+  # -----------------------------------------------------------------------
+
+  - id: tc-001
+    name: "Load valid agent config on startup"
+    category: config-loading
+    priority: high
+    tags: [config, setup, agent-profile]
+    input:
+      prompt: "/re-buyer-consultation First-time buyers Sarah and Tom, $320K, Fishers. Slug: sarah-jones-fc-tucker"
+      context: "All config files exist for sarah-jones-fc-tucker"
+    assertions:
+      - "Skill loads agent-profile.yaml before generating any output"
+      - "Skill loads vendor-network.yaml to pull lender referral"
+      - "Skill loads fee-structure.yaml for buyer compensation discussion"
+      - "Agent name and brokerage appear in all generated materials — not generic placeholders"
+      - "Lender referral matches the primary lender in vendor-network.yaml"
+
+  - id: tc-002
+    name: "Missing config redirects to re-agent-setup"
+    category: config-loading
+    priority: high
+    tags: [config, error-handling]
+    input:
+      prompt: "/re-buyer-consultation buyer consultation. Slug: unknown-agent-xyz"
+      context: "No config directory exists for unknown-agent-xyz"
+    assertions:
+      - "Skill does not generate buyer materials with generic agent info"
+      - "Skill states it cannot find config for that slug"
+      - "Skill directs agent to run /re-agent-setup"
+
+  - id: tc-003
+    name: "No slug provided — prompts for identification"
+    category: config-loading
+    priority: medium
+    tags: [config, agent-identification]
+    input:
+      prompt: "/re-buyer-consultation first-time buyer consultation"
+      context: "No slug or agent name provided in prompt"
+    assertions:
+      - "Skill asks for agent slug or name before generating materials"
+      - "Skill explains how to look up the slug (Monday.com registry)"
+      - "Skill does not generate partially branded materials with placeholders"
+
+  # -----------------------------------------------------------------------
+  # BUYER AGENCY AGREEMENT
+  # -----------------------------------------------------------------------
+
+  - id: tc-004
+    name: "Buyer agency agreement explanation included in standard consultation"
+    category: buyer-agency-agreement
+    priority: high
+    tags: [buyer-agreement, post-NAR, IAR-125, compliance]
+    input:
+      prompt: "/re-buyer-consultation Standard consultation for first-time buyers. Slug: sarah-jones-fc-tucker"
+      context: "Standard new buyer client — no prior relationship"
+    assertions:
+      - "Buyer agency agreement explanation is included without the agent explicitly requesting it"
+      - "Skill references IAR Form 125 by name"
+      - "Skill states that written agreement must be signed BEFORE any showing"
+      - "Post-August 2024 requirement is acknowledged — not presented as optional"
+      - "Compensation transparency explanation is included"
+
+  - id: tc-005
+    name: "Buyer agency objection handling"
+    category: buyer-agency-agreement
+    priority: high
+    tags: [buyer-agreement, objection-handling]
+    input:
+      prompt: "/re-buyer-consultation buyer is refusing to sign the agency agreement before seeing homes. Slug: sarah-jones-fc-tucker"
+      context: "Motivated buyer who objects to the new agreement requirement"
+    assertions:
+      - "Skill acknowledges the buyer's perspective before defending the requirement"
+      - "Skill provides a property-specific agreement as a compromise option"
+      - "Skill explains that without an agreement the agent cannot represent them"
+      - "Skill provides at least 3 distinct objection responses"
+      - "Skill does not suggest proceeding to showings without any form of signed agreement"
+
+  - id: tc-006
+    name: "Compensation explanation covers seller-paid and buyer-paid scenarios"
+    category: buyer-agency-agreement
+    priority: high
+    tags: [buyer-agreement, compensation, post-NAR]
+    input:
+      prompt: "/re-buyer-consultation explain buyer agent compensation to skeptical buyer. Slug: sarah-jones-fc-tucker"
+      context: "Buyer asks 'who actually pays you?'"
+    assertions:
+      - "Skill explains that seller typically offers buyer broker compensation outside the MLS"
+      - "Skill explains what happens if seller offers less than agreed compensation"
+      - "Skill states that compensation is negotiable and not set by any association"
+      - "Skill does not state the buyer will definitely not pay anything — that's not guaranteed"
+      - "Fee rate referenced comes from fee-structure.yaml, not a hardcoded number"
+
+  # -----------------------------------------------------------------------
+  # FINANCING EDUCATION
+  # -----------------------------------------------------------------------
+
+  - id: tc-007
+    name: "First-time buyer with limited savings — IHCDA and FHA options"
+    category: financing-education
+    priority: high
+    tags: [financing, IHCDA, FHA, first-time-buyer]
+    input:
+      prompt: "/re-buyer-consultation First-time buyer, $280K target, limited savings (~$8K), good credit ~680. Slug: sarah-jones-fc-tucker"
+      context: "First-time buyer with limited down payment resources"
+    assertions:
+      - "Skill identifies FHA as a viable option given credit score and limited savings"
+      - "Skill presents IHCDA down payment assistance programs for Indiana"
+      - "Skill mentions the MCC (Mortgage Credit Certificate) as a stackable benefit"
+      - "Skill notes IHCDA income and purchase price limits without fabricating specific numbers"
+      - "Skill recommends a lender referral from vendor-network.yaml rather than a generic lender"
+      - "Skill does not commit to specific IHCDA program availability — directs to lender"
+
+  - id: tc-008
+    name: "VA buyer — COE and funding fee guidance"
+    category: financing-education
+    priority: high
+    tags: [financing, VA, veteran, COE]
+    input:
+      prompt: "/re-buyer-consultation VA eligible buyer relocating from out of state. Not yet pre-approved. Slug: dan-riley-remax"
+      context: "Veteran buyer; no current VA loan; first VA use in Indiana"
+    assertions:
+      - "Skill identifies VA loan as the recommended starting point"
+      - "Skill explains VA funding fee and notes it is waived for service-connected disability"
+      - "Skill explains COE (Certificate of Eligibility) and how to obtain it"
+      - "Skill notes VA MPRs (Minimum Property Requirements) and their practical impact"
+      - "Skill recommends a VA-experienced lender from vendor-network.yaml"
+      - "Skill does not quote a specific VA interest rate"
+
+  - id: tc-009
+    name: "USDA eligibility — agent appropriately redirects to verification"
+    category: financing-education
+    priority: medium
+    tags: [financing, USDA, rural, eligibility]
+    input:
+      prompt: "/re-buyer-consultation Buyer targeting Lebanon IN area (Boone County), 0% down needed, income ~$75K. Slug: dan-riley-remax"
+      context: "Buyer interested in USDA; property may be in eligible area"
+    assertions:
+      - "Skill mentions USDA as a potential option given the rural/exurban target area"
+      - "Skill instructs agent to verify specific property eligibility on USDA eligibility map — does NOT confirm eligibility"
+      - "Skill mentions income limit context (115% of area median income)"
+      - "Skill notes that Boone County outer areas are typically USDA-eligible"
+      - "Skill does not promise USDA approval for any specific address"
+
+  # -----------------------------------------------------------------------
+  # DISCOVERY QUESTIONNAIRE
+  # -----------------------------------------------------------------------
+
+  - id: tc-010
+    name: "Discovery questionnaire adapted to buyer scenario"
+    category: discovery-questionnaire
+    priority: high
+    tags: [discovery, questionnaire, scenario-adaptation]
+    input:
+      prompt: "/re-buyer-consultation downsizer, widow, 68 years old, selling large Carmel home, wants smaller one-story. Slug: sarah-jones-fc-tucker"
+      context: "Older buyer in emotionally sensitive downsizing situation"
+    assertions:
+      - "Discovery questionnaire includes accessibility-relevant questions (stairs, entry steps)"
+      - "Discovery questionnaire includes HOA and community amenity questions relevant to retirement lifestyle"
+      - "Skill does not include questions irrelevant to this scenario (e.g., school districts, playgrounds)"
+      - "Skill includes an empathetic note about pacing for emotionally charged transitions"
+      - "Discovery questions cover her selling-first coordination and timeline needs"
+
+  - id: tc-011
+    name: "School district question flagged for Hamilton County buyers"
+    category: discovery-questionnaire
+    priority: high
+    tags: [discovery, school-district, Hamilton-County]
+    input:
+      prompt: "/re-buyer-consultation Family buyers targeting Fishers or Carmel, 4BR. Slug: sarah-jones-fc-tucker"
+      context: "Hamilton County target; multiple school districts in play"
+    assertions:
+      - "Discovery questionnaire asks explicitly about school district preference"
+      - "Skill notes that Carmel Clay vs Hamilton Southeastern vs Westfield vs Noblesville represent distinct value boundaries"
+      - "Skill warns that proximity to a school is not the same as being in that school's district"
+      - "Search criteria summary specifies district(s) as a filter, not just city names"
+
+  # -----------------------------------------------------------------------
+  # SEARCH CRITERIA
+  # -----------------------------------------------------------------------
+
+  - id: tc-012
+    name: "Search criteria summary is complete and BLC-ready"
+    category: search-criteria
+    priority: high
+    tags: [search-criteria, MLS, BLC]
+    input:
+      prompt: "/re-buyer-consultation Generate search criteria. Buyers: 3BR minimum, 2-car garage, Hamilton County, $300K–$365K, Westfield or Noblesville schools. Slug: sarah-jones-fc-tucker"
+      context: "Agent needs MLS search criteria to set up saved search in BLC"
+    assertions:
+      - "Output includes a labeled 'Search Criteria Summary' block"
+      - "Price range is specified as min and max"
+      - "Counties/cities and school districts are listed as separate fields"
+      - "Bedroom and garage minimums are specified"
+      - "Output includes status flags (Active, Active Under Contract recommended)"
+      - "Output is formatted so agent can paste values directly into BLC fields"
+
+  # -----------------------------------------------------------------------
+  # SPECIAL SCENARIOS
+  # -----------------------------------------------------------------------
+
+  - id: tc-013
+    name: "Move-up buyer with contingent home sale — contingency explained"
+    category: special-scenarios
+    priority: high
+    tags: [move-up, contingency, home-sale, bridge-loan]
+    input:
+      prompt: "/re-buyer-consultation Move-up buyer, owns Greenwood home ~$340K value, wants Carmel $575K. Needs sale to fund purchase. Slug: lisa-chen-kw"
+      context: "Buyer has equity in current home but cannot buy without selling first"
+    assertions:
+      - "Skill explains home sale contingency mechanics (how it protects the buyer)"
+      - "Skill explains bridge loan as an alternative (buy before selling)"
+      - "Skill recommends getting lender's opinion on whether buyer qualifies to carry two mortgages"
+      - "Skill creates a timeline worksheet showing listing-sale-purchase sequencing"
+      - "Skill does not promise buyer can close simultaneously without knowing lender qualification"
+
+  # -----------------------------------------------------------------------
+  # DISCLAIMER COMPLIANCE
+  # -----------------------------------------------------------------------
+
+  - id: tc-014
+    name: "Legal and loan disclaimers present in financing education output"
+    category: disclaimer-compliance
+    priority: high
+    tags: [disclaimer, legal, financing, compliance]
+    input:
+      prompt: "/re-buyer-consultation Full consultation including financing education for first-time buyer. Slug: sarah-jones-fc-tucker"
+      context: "Any complete buyer consultation output with financing section"
+    assertions:
+      - "Output contains the standard legal disclaimer (not legal advice, consult managing broker/attorney)"
+      - "Output contains a financing disclaimer noting loan terms and program eligibility are subject to change"
+      - "Skill does not quote specific interest rates in any output"
+      - "Skill does not confirm USDA or IHCDA eligibility without directing agent to verify with lender"
+      - "Disclaimers appear in a labeled section, not buried in text"

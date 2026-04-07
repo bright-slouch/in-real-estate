@@ -1,0 +1,324 @@
+# =============================================================================
+# EMAIL TEMPLATES — Central Indiana Real Estate Agent Plugin
+# =============================================================================
+# Base email templates for every major transaction touchpoint.
+# Loaded by: re-client-communication (primary), re-open-house,
+# re-showing-coordinator, re-transaction-manager.
+#
+# INSTRUCTIONS:
+# - Curly brace variables {like_this} are filled in by the skill at runtime
+# - The signature_block is appended to every email unless overridden
+# - Tone matches agent-profile.yaml voice settings — skills may adjust slightly
+# - Templates are starting points — skills personalize based on transaction context
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SIGNATURE BLOCK
+# -----------------------------------------------------------------------------
+# Appended to all outgoing emails. Skills use this verbatim.
+
+signature_block: |
+  {agent_preferred_name} {agent_last_name}
+  {brokerage_name} | {office_name}
+  {agent_phone_cell} | {agent_email_primary}
+  {agent_website}
+  Licensed in Indiana | REALTOR® | Equal Housing Opportunity
+
+signature_block_short: |
+  {agent_preferred_name} {agent_last_name} | {brokerage_name}
+  {agent_phone_cell} | {agent_email_primary}
+
+# -----------------------------------------------------------------------------
+# LISTING SIDE TEMPLATES
+# -----------------------------------------------------------------------------
+
+listing_appointment_confirmation:
+  subject: "Confirmed: Listing Consultation at {property_address} — {appointment_date}"
+  body: |
+    {greeting} {client_first_name},
+
+    I'm looking forward to meeting with you at {property_address} on {appointment_date} at {appointment_time}.
+
+    To make the most of our time together, I'll be bringing:
+    - A market analysis for your neighborhood
+    - My suggested pricing strategy
+    - An overview of how I market properties
+
+    If you have any questions before then, feel free to call or text me at {agent_phone_cell}.
+
+    {closing}
+
+just_listed_announcement:
+  subject: "Just Listed: {property_address} | {bedrooms} Bed / {bathrooms} Bath | {list_price}"
+  body: |
+    {greeting} {recipient_first_name},
+
+    Exciting news — I just listed a great home in {neighborhood_or_city}!
+
+    {property_address}
+    {bedrooms} beds | {bathrooms} baths | {sqft} sq ft | {list_price}
+
+    {property_highlight_1_or_2_sentences}
+
+    {listing_url_or_mls_note}
+
+    Know anyone who's looking? I'd love an introduction.
+
+    {closing}
+
+price_reduction_announcement:
+  subject: "Price Update: {property_address} — Now {new_price}"
+  body: |
+    {greeting} {recipient_first_name},
+
+    Good news for anyone who's been watching {property_address}!
+
+    The price has been updated to {new_price} (previously {old_price}), making this an even stronger opportunity for the right buyer.
+
+    {property_highlight_sentence}
+
+    If this is the right fit, let's get you in for a showing before it goes.
+
+    {closing}
+
+offer_received_notification:
+  subject: "Offer Received: {property_address}"
+  body: |
+    {greeting} {seller_first_name},
+
+    We've received an offer on {property_address}. Here's the quick summary:
+
+    - Offer Price: {offer_price}
+    - Financing: {financing_type}
+    - Earnest Money: {earnest_money}
+    - Inspection Period: {inspection_days} days
+    - Proposed Close Date: {close_date}
+
+    I'd like to walk you through the full offer and discuss our response strategy. Can you talk today at {suggested_time_1} or {suggested_time_2}?
+
+    {closing}
+
+under_contract_listing_notification:
+  subject: "Under Contract: {property_address}"
+  body: |
+    {greeting} {seller_first_name},
+
+    Great news — {property_address} is officially under contract!
+
+    Here's where we stand:
+    - Contract Price: {contract_price}
+    - Inspection Period Ends: {inspection_deadline}
+    - Appraisal Expected By: {appraisal_date}
+    - Target Close Date: {close_date}
+
+    I'll keep you updated at every milestone. The next step is the buyer's inspection, which is scheduled for {inspection_date}.
+
+    Talk soon —
+
+# -----------------------------------------------------------------------------
+# BUYER SIDE TEMPLATES
+# -----------------------------------------------------------------------------
+
+buyer_consultation_confirmation:
+  subject: "Confirmed: Buyer Consultation — {appointment_date}"
+  body: |
+    {greeting} {client_first_name},
+
+    Looking forward to our meeting on {appointment_date} at {appointment_time} at {location_or_call_method}.
+
+    We'll cover:
+    - What to expect from the buying process
+    - How I work as your buyer's agent
+    - Your search criteria, budget, and timeline
+    - Next steps to get you set up for success
+
+    If you haven't connected with a lender yet, I'm happy to refer you to a few great local options — pre-approval is the first step once we're ready to start making offers.
+
+    See you then!
+
+    {closing}
+
+new_listing_alert:
+  subject: "New Listing Alert: {bedrooms}BR in {city} — {list_price}"
+  body: |
+    {greeting} {client_first_name},
+
+    A new listing just hit the market that matches what you're looking for:
+
+    {property_address}
+    {bedrooms} beds | {bathrooms} baths | {sqft} sq ft
+    Listed at: {list_price}
+
+    {property_highlight_1_sentence}
+
+    This market moves fast — if you'd like to see it, let me know and I'll get us in as soon as possible.
+
+    {closing}
+
+showing_confirmation:
+  subject: "Showing Confirmed: {property_address} — {showing_date} at {showing_time}"
+  body: |
+    {greeting} {client_first_name},
+
+    We're confirmed for a showing at:
+
+    {property_address}
+    {showing_date} at {showing_time}
+
+    A few things to keep in mind:
+    - Plan to spend about {showing_duration} minutes at the property
+    - Take photos/video of anything you want to remember
+    - Feel free to open closets, check under sinks, and look at anything you'd want to know before buying
+
+    I'll meet you there. See you {day_of_week}!
+
+    {closing}
+
+offer_submitted_notification:
+  subject: "Offer Submitted: {property_address}"
+  body: |
+    {greeting} {client_first_name},
+
+    Your offer on {property_address} has been submitted!
+
+    Quick summary:
+    - Offer Price: {offer_price}
+    - Earnest Money: {earnest_money}
+    - Inspection Period: {inspection_days} days
+    - Proposed Close Date: {close_date}
+    - Offer Expiration: {offer_expiration}
+
+    The listing agent has until {offer_expiration} to respond. I'll reach out as soon as I hear back — and I'll follow up with them directly to keep things moving.
+
+    Hang tight!
+
+    {closing}
+
+# -----------------------------------------------------------------------------
+# TRANSACTION MILESTONE TEMPLATES
+# -----------------------------------------------------------------------------
+
+inspection_reminder:
+  subject: "Inspection Scheduled: {property_address} — {inspection_date}"
+  body: |
+    {greeting} {client_first_name},
+
+    Just a reminder that the home inspection for {property_address} is scheduled for:
+
+    {inspection_date} at {inspection_time}
+    Inspector: {inspector_name}, {inspector_company}
+
+    I'll be there with you. Plan for 2-3 hours depending on the size of the home. The inspection report is typically delivered within {report_turnaround_hours} hours.
+
+    Inspection period ends: {inspection_deadline}
+
+    After we receive the report, we'll review it together and decide on any repair requests.
+
+    {closing}
+
+appraisal_scheduled:
+  subject: "Appraisal Ordered: {property_address}"
+  body: |
+    {greeting} {client_first_name},
+
+    The lender has ordered the appraisal for {property_address}. The appraiser is expected to access the property {appraisal_access_date} and we should have the report within {appraisal_turnaround_days} business days.
+
+    You don't need to be present for the appraisal — the listing agent will coordinate access.
+
+    Target close date remains {close_date}. I'll update you as soon as I have the appraisal results.
+
+    {closing}
+
+clear_to_close:
+  subject: "Clear to Close! {property_address}"
+  body: |
+    {greeting} {client_first_name},
+
+    Excellent news — the lender has issued Clear to Close on {property_address}!
+
+    This means the loan is fully approved and we're on track to close on {close_date}.
+
+    Next steps:
+    - Final walkthrough: {walkthrough_date} at {walkthrough_time}
+    - Closing: {close_date} at {close_time} at {title_company_name}
+    - {wire_or_cashiers_check_note}
+
+    Please confirm your closing funds will be ready and that your ID is current. Let me know if you have any questions!
+
+    {closing}
+
+closing_reminder:
+  subject: "Closing Tomorrow: {property_address} — Here's What to Bring"
+  body: |
+    {greeting} {client_first_name},
+
+    We close tomorrow on {property_address}! Here's what you need to bring:
+
+    - Government-issued photo ID (driver's license or passport)
+    - {wire_confirmation_or_cashiers_check_note}
+    - Your checkbook (for any small last-minute adjustments)
+
+    Closing Details:
+    - Time: {close_time}
+    - Location: {title_company_name}, {title_company_address}
+    - Contact: {title_company_contact}
+
+    Plan for 60-90 minutes. I'll be there with you.
+
+    {closing}
+
+# -----------------------------------------------------------------------------
+# POST-CLOSING TEMPLATES
+# -----------------------------------------------------------------------------
+
+congratulations_post_close:
+  subject: "Congratulations on Your New Home!"
+  body: |
+    {greeting} {client_first_name},
+
+    Congratulations — you're officially a homeowner! 🎉
+
+    It was a genuine pleasure helping you through this process. I hope {property_address} brings you everything you're looking for.
+
+    A few important reminders as you get settled:
+    - Update your address with the post office, your employer, and any subscriptions
+    - {utility_transfer_reminder}
+    - Schedule any priority repairs or updates soon — contractors book up quickly
+
+    And of course — if any questions come up as you settle in, I'm always just a call or text away.
+
+    Wishing you the best in your new home!
+
+    {closing}
+
+review_request:
+  subject: "Would You Share Your Experience?"
+  body: |
+    {greeting} {client_first_name},
+
+    Congratulations again on {property_address}!
+
+    If you had a positive experience working with me, I'd really appreciate it if you'd take a few minutes to share your thoughts online. Reviews mean a great deal and help other families in the same position you were in.
+
+    {review_link_zillow_or_google}
+
+    No pressure at all — and if there was anything I could have done better, I'd love to hear that too.
+
+    Thank you for trusting me with such an important decision.
+
+    {closing}
+
+anniversary_check_in:
+  subject: "One Year — Happy Home Anniversary, {client_first_name}!"
+  body: |
+    {greeting} {client_first_name},
+
+    I can't believe it's already been a year since you closed on {property_address}!
+
+    I hope you've settled in and are loving every bit of it.
+
+    If you're curious about what your home is worth today in the current market, I'd be happy to put together a quick estimate. And as always, if you know anyone who's thinking about buying or selling, I'd be grateful for the introduction.
+
+    Enjoy the anniversary!
+
+    {closing}

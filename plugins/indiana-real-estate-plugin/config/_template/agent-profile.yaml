@@ -1,0 +1,212 @@
+# =============================================================================
+# AGENT PROFILE — Central Indiana Real Estate Agent Plugin
+# =============================================================================
+# This file defines the agent's identity, credentials, voice, and methodology.
+# It is loaded first by every skill — it establishes who the agent is.
+#
+# INSTRUCTIONS:
+# - Replace all [PLACEHOLDER] values with actual agent data
+# - "voice" section controls how ALL generated content sounds
+# - "methodology" section guides how skills approach their work
+# - Omit optional fields rather than leaving them blank
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# IDENTITY
+# -----------------------------------------------------------------------------
+
+name:
+  full: "[First] [Last]"              # Legal name as licensed
+  preferred: "[First]"                 # How agent introduces themselves
+  professional: "[First Name] [Last]"  # "Jane Smith, REALTOR®" — used in output headers
+
+license:
+  number: "RB[XXXXXXXX]"              # Indiana real estate license number (e.g., RB20001234)
+  type: "Broker"                       # Broker | Broker Associate | Salesperson
+  state: "Indiana"
+  expiration: "20[XX]-[MM]-[DD]"      # License expiration date — used for compliance reminders
+  status: "Active"                     # Active | Inactive | Pending Renewal
+
+brokerage:
+  name: "[Brokerage Name]"             # e.g., F.C. Tucker Company, Keller Williams Indianapolis Metro N
+  office_name: "[Office Name]"          # Specific office, e.g., "Tucker Fishers"
+  address:
+    street: "[Street Address]"
+    city: "[City]"
+    state: "IN"
+    zip: "[XXXXX]"
+  phone: "([XXX]) [XXX]-[XXXX]"       # Office main line
+  website: "https://[brokerage-url]"
+  managing_broker: "[Name]"            # Managing broker name — referenced in disclaimers
+
+contact:
+  phone_cell: "([XXX]) [XXX]-[XXXX]"  # Cell — primary client contact number
+  phone_office: "([XXX]) [XXX]-[XXXX]" # Office line (optional)
+  email_primary: "[name]@[domain].com"
+  email_brokerage: "[name]@[brokerage].com" # Optional — brokerage email if different
+  website: "https://[agent-website]"    # Agent's personal website (optional)
+  address_mailing: "[City], IN [ZIP]"   # Used in correspondence headers
+
+social:
+  # Include only platforms where agent is active
+  facebook: "https://facebook.com/[handle]"      # Optional
+  instagram: "@[handle]"                          # Optional
+  linkedin: "https://linkedin.com/in/[handle]"   # Optional
+  zillow: "https://zillow.com/profile/[handle]"  # Optional
+  realtor_com: "https://realtor.com/realestateagents/[handle]"  # Optional
+
+mls:
+  mibor_id: "[XXXXXXX]"               # MIBOR BLC member ID (7-digit number)
+  mibor_member_since: "20[XX]"        # Year joined MIBOR
+  nar_id: "[XXXXXXXXX]"               # NAR NRDS ID (optional)
+
+designations:
+  # Common Indiana designations — list those held, remove others
+  # GRI: Graduate, REALTOR® Institute (Indiana Realtors designation)
+  # CRS: Certified Residential Specialist
+  # ABR: Accredited Buyer's Representative
+  # SRS: Seller Representative Specialist
+  # SRES: Seniors Real Estate Specialist
+  # e-PRO: NAR technology certification
+  # MRP: Military Relocation Professional
+  - "REALTOR®"                        # Always include if NAR member
+  # - "GRI"
+  # - "ABR"
+  # - "SRS"
+  # - "CRS"
+  # - "SRES"
+
+specializations:
+  # Describe areas of expertise — used in bio and listing presentations
+  # Examples below — update to reflect agent's actual focus
+  primary:
+    - "[e.g., First-time homebuyers]"
+    - "[e.g., Luxury properties $500K+]"
+    - "[e.g., Relocation buyers]"
+  secondary:
+    - "[e.g., New construction]"
+    - "[e.g., Investment properties]"
+
+experience:
+  years_licensed: [X]                  # Total years as licensed agent
+  years_in_central_indiana: [X]        # Years working specifically in Central IN market
+  transactions_closed_total: "[XXX]+"  # Approximate lifetime transaction count (used in bios)
+  transactions_last_12_months: [XX]    # Past year — used in listing presentations
+
+bio:
+  short: >
+    [2-3 sentence professional bio used in listing presentations, buyer consultations,
+    and email signatures. Should mention market expertise, years of experience, and
+    one differentiating strength. Example: "Jane Smith has been helping Central Indiana
+    families buy and sell homes since 2015. With over 200 closed transactions across
+    Hamilton and Boone Counties, she brings deep market knowledge and a reputation for
+    honest, low-pressure service to every transaction."]
+
+  long: >
+    [5-7 sentence full bio for website, marketing materials, and presentations.
+    Include: background, market expertise, approach to client service, personal
+    connection to the community, and any notable achievements. Avoid superlatives
+    ("best", "top") unless backed by verifiable data.]
+
+# -----------------------------------------------------------------------------
+# VOICE AND TONE
+# -----------------------------------------------------------------------------
+# These settings control how ALL generated content sounds.
+# Skills read these values to match the agent's natural communication style.
+
+voice:
+  # Tone preset — choose one that best matches the agent's brand
+  # Options: professional-friendly | casual-warm | luxury-polished | expert-authoritative
+  tone_preset: "professional-friendly"
+
+  # Formality scale: 1 = very casual (texting a friend), 10 = very formal (legal memo)
+  # Most agents land between 5-7. Luxury market tends toward 7-9.
+  formality_scale: 6
+
+  # Personality traits — 3-5 adjectives that describe the agent's communication style
+  # Examples: approachable, direct, warm, knowledgeable, patient, confident, empathetic
+  personality_traits:
+    - "approachable"
+    - "knowledgeable"
+    - "direct"
+    - "warm"
+
+  # How agent typically starts conversations/emails
+  greeting_style: "Hi [First Name],"   # Options: "Hi", "Hello", "Hey", "Good morning", "Dear"
+
+  # How agent signs off
+  closing_style: "Thanks,"             # Options: "Thanks,", "Best,", "Warm regards,", "All the best,"
+
+  # Emoji usage in client communications and social media
+  # Options: none | minimal (1-2 per message) | moderate (3-5) | liberal (7+)
+  emoji_usage: "minimal"
+
+  # Exclamation point frequency
+  # Options: none | sparingly (1 per paragraph max) | moderate | frequent
+  exclamation_frequency: "moderate"
+
+  # Oxford comma preference
+  oxford_comma: true
+
+  # Vocabulary preferences — terms the agent naturally uses vs avoids
+  preferred_terms:
+    # - "home" over "property" (more personal)
+    # - "your family" over "buyers"
+    # - "neighborhood" over "area"
+    # Add agent-specific preferences
+  avoid_terms:
+    # - "deal" (sounds transactional, not relationship-focused)
+    # - "cheap" (use "affordable" or "great value")
+    # Add agent-specific avoid list
+
+# -----------------------------------------------------------------------------
+# METHODOLOGY
+# -----------------------------------------------------------------------------
+# How the agent approaches their work — informs skill decision frameworks
+
+methodology:
+  listing_approach: >
+    [Describe the agent's typical approach to seller clients. Example: "Price it right
+    from day one — overpriced listings sit and stigmatize. I prefer to launch at or
+    slightly below market and let buyer competition drive the price up." Or: "I believe
+    in a 2-3 week pre-listing prep period with professional photography before going live."]
+
+  buyer_approach: >
+    [Describe the agent's approach to buyer clients. Example: "Education first — buyers
+    make better decisions when they understand the process. I spend the first consultation
+    explaining agency, financing, and how to evaluate a home before we ever see a property."]
+
+  pricing_philosophy: >
+    [How does the agent approach pricing strategy? Example: "I use a three-price framework:
+    at-market for a normal sale, 3-5% below for speed when sellers need to move, and an
+    aspirational ceiling when conditions support testing higher. I never recommend a price
+    I can't defend with comps."]
+
+  negotiation_style: "collaborative"   # Options: collaborative | assertive | data-driven | relationship-first
+  negotiation_notes: >
+    [Optional: describe agent's specific negotiation tendencies. Example: "I lead with
+    data and let the market speak. I don't get emotional in negotiations — I help clients
+    understand what the data supports and where we have room to move."]
+
+  communication_cadence:
+    buyer_clients: "twice weekly"       # How often agent proactively contacts active buyer clients
+    seller_clients: "weekly"            # How often agent proactively contacts active listing sellers
+    post_close_check_in: "30 days"      # First check-in after closing
+    anniversary_check_in: true          # Send anniversary message 1 year after close
+
+  preferred_showing_days:              # Days agent prefers to schedule showings
+    - "Saturday"
+    - "Sunday"
+    - "Wednesday"
+    - "Thursday"
+
+  open_house_preference: true          # Does agent regularly hold open houses?
+  open_house_frequency: "first two weekends after list" # When agent holds open houses
+
+  transaction_coordination:
+    # Options: agent-self | tc-internal | tc-external | shared
+    method: "agent-self"               # Who manages transaction coordination
+    tc_name: "[TC Name if applicable]"  # Transaction coordinator name (if using one)
+    tc_email: "[tc@email.com]"
+    tc_phone: "([XXX]) [XXX]-[XXXX]"
+    preferred_title_company: "[Title Company Name]"  # Agent's go-to title company

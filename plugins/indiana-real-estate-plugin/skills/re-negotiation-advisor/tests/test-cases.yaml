@@ -1,0 +1,285 @@
+---
+# re-negotiation-advisor Test Cases
+# 14 cases across 7 categories
+
+test_suite: re-negotiation-advisor
+version: "1.0"
+last_updated: "2026-03-30"
+
+categories:
+  - config-loading
+  - inspection-negotiation
+  - appraisal-gap
+  - multiple-offers
+  - offer-counter-strategy
+  - walk-away-analysis
+  - emotional-coaching
+
+tests:
+
+  # -----------------------------------------------------------------------
+  # CONFIG LOADING
+  # -----------------------------------------------------------------------
+
+  - id: tc-001
+    name: "Config loads and market context informs strategy"
+    category: config-loading
+    priority: high
+    tags: [config, market-context, strategy]
+    input:
+      prompt: "/re-negotiation-advisor inspection response buyer side. Slug: sarah-jones-fc-tucker"
+      context: "All config files exist; market-areas.yaml specifies Hamilton County current market conditions"
+    assertions:
+      - "Skill loads agent-profile.yaml before generating negotiation guidance"
+      - "Market condition context from market-areas.yaml influences strategy recommendation"
+      - "Agent name is used in output, not a generic placeholder"
+      - "Skill identifies the negotiation stage (inspection) and adjusts guidance accordingly"
+
+  # -----------------------------------------------------------------------
+  # INSPECTION NEGOTIATION
+  # -----------------------------------------------------------------------
+
+  - id: tc-002
+    name: "Inspection issues correctly categorized by severity"
+    category: inspection-negotiation
+    priority: high
+    tags: [inspection, categorization, safety, major-systems]
+    input:
+      prompt: >
+        /re-negotiation-advisor inspection response buyer side —
+        findings: missing GFCI outlets, 15-year-old furnace (functional), roof 3 years
+        remaining, minor cosmetic items. $340K purchase. Slug: sarah-jones-fc-tucker
+      context: "Balanced market; typical inspection findings"
+    assertions:
+      - "GFCI outlets are categorized as a safety item (Category A)"
+      - "Roof with 3 years remaining is flagged as a major concern worth requesting"
+      - "Cosmetic items are noted but not recommended for the credit request"
+      - "15-year-old functional furnace is flagged but advice acknowledges it's functional vs needing replacement"
+      - "Output provides a tiered request framework: what to demand, what to negotiate, what to drop"
+
+  - id: tc-003
+    name: "Inspection credit request preferred over repair list"
+    category: inspection-negotiation
+    priority: high
+    tags: [inspection, credit, repairs, Indiana-practice]
+    input:
+      prompt: >
+        /re-negotiation-advisor inspection response buyer side — $8K roof issue,
+        $7K furnace. Should we request repairs or a credit? Slug: sarah-jones-fc-tucker
+      context: "Agent asking about the preference for credit vs repairs in Indiana practice"
+    assertions:
+      - "Skill recommends credit over repair list as the preferred approach"
+      - "Skill explains why: buyer controls contractor selection; faster to negotiate; seller repairs often low quality"
+      - "Skill notes lender credit limits by loan type (conventional 3–6%; FHA 6%; VA 4%)"
+      - "Draft credit request language is provided"
+
+  - id: tc-004
+    name: "Inspection response — seller side — never recommend rejecting without countering"
+    category: inspection-negotiation
+    priority: high
+    tags: [inspection, seller-side, counter, reject]
+    input:
+      prompt: >
+        /re-negotiation-advisor inspection request seller side — buyer asked for $14K credit
+        on roof and HVAC. Seller wants to reject everything. Balanced market.
+        Slug: lisa-chen-kw
+      context: "Seller is frustrated and wants to reject the inspection request outright"
+    assertions:
+      - "Skill advises against rejecting the request without countering in a balanced market"
+      - "Skill explains the risk: buyer may terminate, seller loses weeks of market time"
+      - "Skill provides a counter strategy (e.g., $7K focused on the most critical item)"
+      - "Skill respects seller's final authority but makes the risk clear"
+      - "Counter language template is provided for transfer to IAR Inspection Response form"
+
+  - id: tc-005
+    name: "PB pipe — flagged as significant Indiana-specific issue"
+    category: inspection-negotiation
+    priority: high
+    tags: [inspection, polybutylene, Indiana, plumbing]
+    input:
+      prompt: >
+        /re-negotiation-advisor inspection found polybutylene pipe throughout a
+        1989 Fishers home. Buyer is asking what to do. Slug: sarah-jones-fc-tucker
+      context: "PB pipe is a known issue in Central Indiana homes from 1978–1995"
+    assertions:
+      - "Skill identifies PB pipe as a known problem in Central Indiana homes of that era"
+      - "Skill provides cost context ($4,000–$20,000+ for full replacement depending on home size)"
+      - "Skill explains that insurance companies increasingly reject or surcharge PB pipe homes"
+      - "Skill recommends requesting either remediation or a substantial credit"
+      - "Skill does not treat PB pipe as a cosmetic item"
+
+  # -----------------------------------------------------------------------
+  # APPRAISAL GAP
+  # -----------------------------------------------------------------------
+
+  - id: tc-006
+    name: "Appraisal gap — all resolution options presented"
+    category: appraisal-gap
+    priority: high
+    tags: [appraisal-gap, options, ROV, renegotiation]
+    input:
+      prompt: >
+        /re-negotiation-advisor appraisal gap buyer side — purchase $515K, appraised
+        $498K, gap $17K, buyer has $12K additional reserves, no gap coverage in contract.
+        Slug: sarah-jones-fc-tucker
+      context: "Significant gap with limited buyer cash reserves"
+    assertions:
+      - "Skill presents at least 4 resolution options: price renegotiation, buyer covers gap, split the gap, ROV"
+      - "Walk-away (terminate using contingency) is listed as an option"
+      - "Skill evaluates ROV feasibility based on likelihood of finding missed comps"
+      - "Split-the-gap math is shown: how much each party gives up"
+      - "Lender constraint is explained: lender loans against appraised value, not purchase price"
+      - "Buyer's cash position ($12K) is analyzed against each option's cash requirement"
+
+  - id: tc-007
+    name: "Appraisal gap — ROV only recommended when viable comps exist"
+    category: appraisal-gap
+    priority: medium
+    tags: [appraisal-gap, ROV, comps]
+    input:
+      prompt: >
+        /re-negotiation-advisor appraisal gap — appraiser used correct comps.
+        Gap is $6K. Buyer wants to challenge the appraisal.
+        Slug: sarah-jones-fc-tucker
+      context: "Gap is small; appraiser appears to have used appropriate comps"
+    assertions:
+      - "Skill evaluates ROV feasibility — notes that if appraiser used correct comps, ROV is unlikely to succeed"
+      - "Skill does not recommend ROV as a reflexive first step when appraiser used valid data"
+      - "Skill recommends split-the-gap or buyer covers $6K as more pragmatic options"
+      - "Skill notes ROV adds 5–10 business days to the timeline"
+
+  # -----------------------------------------------------------------------
+  # MULTIPLE OFFERS
+  # -----------------------------------------------------------------------
+
+  - id: tc-008
+    name: "H&B call — correct information disclosed and withheld"
+    category: multiple-offers
+    priority: high
+    tags: [multiple-offers, highest-and-best, disclosure, ethics]
+    input:
+      prompt: >
+        /re-negotiation-advisor I'm the listing agent with 4 offers. How do I run
+        the highest-and-best process? Slug: lisa-chen-kw
+      context: "Listing agent setting up a proper H&B call"
+    assertions:
+      - "Skill instructs agent to disclose the NUMBER of competing offers to all buyers' agents"
+      - "Skill explicitly instructs agent NOT to reveal competing offer prices"
+      - "Skill provides draft H&B notification email language"
+      - "Skill recommends a specific deadline window (4–12 hours) with rationale"
+      - "Skill notes that extending deadlines multiple times undermines the process"
+
+  - id: tc-009
+    name: "Simultaneous counter — mandatory safety language included"
+    category: multiple-offers
+    priority: high
+    tags: [simultaneous-counter, multiple-offers, liability]
+    input:
+      prompt: >
+        /re-negotiation-advisor listing agent wants to counter 2 buyers simultaneously.
+        Slug: lisa-chen-kw
+      context: "Seller wants to send simultaneous counteroffers to two buyers"
+    assertions:
+      - "Skill includes mandatory language: first executed counter returned constitutes acceptance; all others void"
+      - "Skill warns that omitting this language risks creating two simultaneous binding contracts"
+      - "Skill recommends consulting managing broker before executing simultaneous counters"
+      - "Draft counter language includes the safety clause"
+
+  # -----------------------------------------------------------------------
+  # OFFER COUNTER STRATEGY
+  # -----------------------------------------------------------------------
+
+  - id: tc-010
+    name: "Lowball offer — counter recommended over rejection"
+    category: offer-counter-strategy
+    priority: high
+    tags: [lowball, counter, seller-side]
+    input:
+      prompt: >
+        /re-negotiation-advisor seller wants to reject a $385K offer on a $429K list
+        (CMA range $418K–$440K). 9 days on market. Slug: lisa-chen-kw
+      context: "9 DOM; early in market exposure; seller is emotionally reactive"
+    assertions:
+      - "Skill advises against rejecting without countering at only 9 DOM"
+      - "Skill provides counter strategy at or near list price"
+      - "Skill explains that countering at list signals value confidence without desperation"
+      - "Skill respects seller's autonomy if they insist on rejecting but documents the advice"
+
+  - id: tc-011
+    name: "Bidding war — buyer not coached to exceed pre-approval"
+    category: offer-counter-strategy
+    priority: high
+    tags: [bidding-war, pre-approval, guardrail, emotional]
+    input:
+      prompt: >
+        /re-negotiation-advisor buyer wants to offer $375K, pre-approved at $360K,
+        on a home with CMA at $330K–$342K. Multiple offers confirmed.
+        Slug: sarah-jones-fc-tucker
+      context: "Emotional buyer wanting to exceed both pre-approval and CMA"
+    assertions:
+      - "Skill does NOT recommend offering $375K without flagging the risk"
+      - "Skill explains the appraisal gap math: $375K vs $342K CMA = $33K potential gap"
+      - "Skill points out buyer would need $33K cash BEYOND their down payment"
+      - "Skill recommends an escalation approach staying within pre-approval range"
+      - "Skill includes emotional coaching language to help buyer think rationally"
+      - "Skill provides a concrete alternative recommendation (escalation to $352K with gap discussion)"
+
+  # -----------------------------------------------------------------------
+  # WALK-AWAY ANALYSIS
+  # -----------------------------------------------------------------------
+
+  - id: tc-012
+    name: "Walk-away decision — checklist and honest conversation template"
+    category: walk-away-analysis
+    priority: high
+    tags: [walk-away, termination, earnest-money]
+    input:
+      prompt: >
+        /re-negotiation-advisor should buyer walk? Inspection revealed $28K of issues.
+        Seller only offered $5K credit. Buyer has appraisal contingency, inspection contingency.
+        Slug: sarah-jones-fc-tucker
+      context: "Significant gap between buyer's needs and seller's offer"
+    assertions:
+      - "Skill presents a clear walk-away decision framework (not just 'it's up to the buyer')"
+      - "Skill analyzes whether $5K credit is adequate for $28K of documented issues"
+      - "Skill confirms buyer retains the right to terminate under the inspection contingency"
+      - "Skill confirms earnest money would return if buyer terminates within contingency period"
+      - "Skill provides the honest client conversation script before recommending termination"
+      - "Skill does not recommend walk away as a reflexive response — explores whether a middle ground exists"
+
+  # -----------------------------------------------------------------------
+  # EMOTIONAL COACHING
+  # -----------------------------------------------------------------------
+
+  - id: tc-013
+    name: "Frustrated buyer coaching — data-driven, not dismissive"
+    category: emotional-coaching
+    priority: medium
+    tags: [buyer, emotional, coaching, lost-bids]
+    input:
+      prompt: >
+        /re-negotiation-advisor coaching script — buyer has lost 4 offers in 3 months.
+        Starting to lose faith. Slug: sarah-jones-fc-tucker
+      context: "Buyer in an emotionally depleted state after multiple losses"
+    assertions:
+      - "Skill acknowledges the buyer's emotional experience before presenting data"
+      - "Skill provides market context (what's causing the losses — data, not platitudes)"
+      - "Skill offers a specific tactical change the agent recommends"
+      - "Script includes a 'pause option' — permission to take a break without judgment"
+      - "Output does not minimize the difficulty or promise the next offer will win"
+
+  - id: tc-014
+    name: "Disclaimer present — negotiation guidance is coaching only"
+    category: emotional-coaching
+    priority: high
+    tags: [disclaimer, legal, guidance]
+    input:
+      prompt: >
+        /re-negotiation-advisor full inspection negotiation strategy for buyer side.
+        Slug: sarah-jones-fc-tucker
+      context: "Any complete negotiation guidance output"
+    assertions:
+      - "Legal disclaimer is present in the output"
+      - "Output states this is guidance and coaching only — not legal advice"
+      - "Output instructs agent to use IAR forms for any formal written modifications to contracts"
+      - "Output reminds agent to consult managing broker for situation-specific advice"

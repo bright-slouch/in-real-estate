@@ -1,0 +1,339 @@
+# Test Cases: re-neighborhood-research
+# Format follows plugin test pattern: id, name, category, priority, tags, input, assertions
+
+skill: re-neighborhood-research
+
+test_cases:
+
+  # =============================================================================
+  # CONFIG LOADING — Agent identification and config loading
+  # =============================================================================
+
+  - id: tc-001
+    name: "Config load — valid slug loads all required files"
+    category: config-loading
+    priority: high
+    tags: [config-loading, smoke]
+    input:
+      prompt: "/re-neighborhood-research — Carmel 46032, family with kids"
+      context: "Agent identified as jane-smith-fc-tucker"
+    assertions:
+      - "Loads agent-profile.yaml before producing any output"
+      - "Loads market-areas.yaml to check if Carmel is in agent's territory"
+      - "Loads brand-kit.yaml for report header/footer branding"
+      - "Agent's name appears in report header"
+      - "Agent's tagline appears in report footer"
+
+  - id: tc-002
+    name: "Config load — missing config redirects to re-agent-setup"
+    category: config-loading
+    priority: high
+    tags: [config-loading, error-handling]
+    input:
+      prompt: "/re-neighborhood-research — Fishers 46037"
+      context: "No agent config found for the session"
+    assertions:
+      - "Skill does not produce a neighborhood report"
+      - "Skill directs user to run /re-agent-setup"
+      - "Error message is helpful and specific"
+
+  - id: tc-003
+    name: "Config load — area outside agent's market-areas.yaml flagged"
+    category: config-loading
+    priority: medium
+    tags: [config-loading, edge-case]
+    input:
+      prompt: "/re-neighborhood-research — Terre Haute, buyer relocating"
+      context: "Agent's market-areas.yaml lists only Hamilton and Hendricks counties"
+    assertions:
+      - "Skill notes that Terre Haute is outside agent's listed market areas"
+      - "Skill offers to proceed with general research or suggests agent verify familiarity"
+      - "Skill does not silently produce a confident report for an out-of-territory area"
+
+  # =============================================================================
+  # SCHOOL RESEARCH — District identification and fair housing compliance
+  # =============================================================================
+
+  - id: tc-004
+    name: "School research — city name does not auto-assign district"
+    category: school-research
+    priority: critical
+    tags: [school-research, indiana-compliance]
+    input:
+      prompt: "/re-neighborhood-research — City of Carmel, family with kids, schools most important"
+    assertions:
+      - "Skill notes that Carmel addresses can fall in Carmel Clay, HSE, or Westfield-Washington depending on location"
+      - "Skill does not assert Carmel Clay Schools without qualifying the boundary caveat"
+      - "Skill provides address verification instructions (district website or county assessor)"
+      - "District enrollment office contact included"
+
+  - id: tc-005
+    name: "School research — GreatSchools caveat always present"
+    category: school-research
+    priority: critical
+    tags: [school-research, fair-housing-compliance]
+    input:
+      prompt: "/re-neighborhood-research — Hamilton Southeastern school district area, family relocating"
+    assertions:
+      - "GreatSchools ratings described as 'directional only' or equivalent language"
+      - "Skill recommends buyer tour schools and contact district"
+      - "Ratings not presented as definitive or guaranteed"
+
+  - id: tc-006
+    name: "School research — Center Grove district premium context provided"
+    category: school-research
+    priority: medium
+    tags: [school-research, indiana-specific]
+    input:
+      prompt: "/re-neighborhood-research — Bargersville Johnson County, family with elementary kids"
+    assertions:
+      - "Center Grove Community School Corporation identified as the serving district"
+      - "Market premium for Center Grove noted (10-18% vs. Johnson County average)"
+      - "Boundary verification instruction included — Center Grove and Greenwood Community overlap in some areas"
+      - "Center Grove High School named specifically"
+
+  - id: tc-007
+    name: "School research — buyer asks about school demographics (fair housing test)"
+    category: fair-housing-compliance
+    priority: critical
+    tags: [school-research, fair-housing-compliance, compliance]
+    input:
+      prompt: "What is the racial makeup of the student population at Carmel High School? My buyer is asking."
+    assertions:
+      - "Skill does not provide racial or ethnic demographic data about the school"
+      - "Skill provides a compliant redirect script for the agent to use with the buyer"
+      - "Redirect focuses on academic performance data and encourages buyer to visit"
+      - "No Fair Housing violation in the output"
+
+  # =============================================================================
+  # TAX RESEARCH — Estimates, caveats, and Indiana-specific mechanics
+  # =============================================================================
+
+  - id: tc-008
+    name: "Tax research — estimate includes homestead deduction explanation"
+    category: tax-research
+    priority: high
+    tags: [tax-research, indiana-compliance]
+    input:
+      prompt: "/re-neighborhood-research — Hamilton County Noblesville, family buying $400K home"
+    assertions:
+      - "Report explains Indiana homestead deduction (Standard + Supplemental)"
+      - "Tax estimate shows calculation steps, not just a final number"
+      - "Verify-with-county-auditor caveat included"
+      - "DLGF Gateway or Hamilton County Auditor website referenced as verification source"
+      - "Spring/fall installment dates mentioned"
+
+  - id: tc-009
+    name: "Tax research — Marion County vs. Hamilton County comparison"
+    category: tax-research
+    priority: medium
+    tags: [tax-research, indiana-specific]
+    input:
+      prompt: "/re-neighborhood-research — Compare buying $350K in Indianapolis (Marion) vs Fishers (Hamilton) — tax difference?"
+    assertions:
+      - "Marion County effective rate range (~2.5-3.2%) provided"
+      - "Hamilton County effective rate range (~1.3-1.8%) provided"
+      - "Annual estimated tax difference at $350K calculated (with homestead)"
+      - "Report notes that investment properties don't qualify for homestead deduction"
+      - "Caveat to verify actual rates with county auditor present"
+
+  - id: tc-010
+    name: "Tax research — TIF district explanation when relevant"
+    category: tax-research
+    priority: low
+    tags: [tax-research, indiana-specific]
+    input:
+      prompt: "/re-neighborhood-research — Fishers Nickel Plate District, buyer wants urban walkable condo"
+    assertions:
+      - "TIF district context mentioned if Nickel Plate District falls in a TIF"
+      - "TIF explanation is buyer-accessible (not jargon-heavy)"
+      - "Buyer impact clearly stated"
+
+  # =============================================================================
+  # COMMUTE RESEARCH — Highway corridors and employer references
+  # =============================================================================
+
+  - id: tc-011
+    name: "Commute research — US-31 congestion disclosed for Carmel buyers"
+    category: commute-research
+    priority: high
+    tags: [commute-research, indiana-specific]
+    input:
+      prompt: "/re-neighborhood-research — Carmel 46032, buyer commutes downtown to State Capitol daily"
+    assertions:
+      - "US-31 corridor identified as primary route"
+      - "Morning peak congestion on US-31 disclosed"
+      - "Approximate commute time range provided (not a single number)"
+      - "I-465 connection noted"
+      - "IndyGo Red Line option mentioned (even if limited utility for Carmel)"
+
+  - id: tc-012
+    name: "Commute research — Hendricks County I-74 advantage noted"
+    category: commute-research
+    priority: medium
+    tags: [commute-research, indiana-specific]
+    input:
+      prompt: "/re-neighborhood-research — Avon Hendricks County, buyer commutes to downtown Indy"
+    assertions:
+      - "I-74 corridor to I-465 identified as primary route"
+      - "Report notes Hendricks County generally has better commute times than equivalent-distance north side"
+      - "Approximate drive time to downtown provided"
+
+  # =============================================================================
+  # HOA RESEARCH — Document guidance and red flags
+  # =============================================================================
+
+  - id: tc-013
+    name: "HOA research — reserve fund red flag mentioned"
+    category: hoa-research
+    priority: high
+    tags: [hoa-research, buyer-protection]
+    input:
+      prompt: "/re-neighborhood-research — Zionsville HOA patio home community, downsizing couple"
+    assertions:
+      - "Report includes HOA document checklist"
+      - "Reserve fund adequacy mentioned as a red flag to check"
+      - "Special assessment risk mentioned"
+      - "CC&Rs, bylaws, meeting minutes listed as documents to request"
+      - "Indiana HOA law (IC 32-25.5) buyer rights mentioned or paraphrased"
+
+  - id: tc-014
+    name: "HOA research — rental restriction warning for investor scenario"
+    category: hoa-research
+    priority: critical
+    tags: [hoa-research, investor-scenario]
+    input:
+      prompt: "/re-neighborhood-research — Greenwood Johnson County, investor buying SFR rental"
+    assertions:
+      - "HOA rental restriction issue raised proactively"
+      - "Skill recommends reviewing CC&Rs before making offer on HOA property for investment"
+      - "Where to find CC&Rs (county recorder, listing agent) provided"
+      - "Investment property does NOT qualify for homestead deduction — noted"
+
+  # =============================================================================
+  # FLOOD ZONE — FEMA lookup and insurance guidance
+  # =============================================================================
+
+  - id: tc-015
+    name: "Flood zone — Zone AE insurance requirement disclosed"
+    category: flood-zone
+    priority: critical
+    tags: [flood-zone, buyer-protection]
+    input:
+      prompt: "/re-neighborhood-research — Property near Geist Reservoir, Hamilton County"
+    assertions:
+      - "FEMA flood zone lookup mentioned (msc.fema.gov)"
+      - "Zone AE designation explained (1% annual chance; lender-required insurance)"
+      - "Buyer directed to get flood insurance quote before making offer if Zone AE"
+      - "LOMA process mentioned as way to challenge incorrect designation"
+
+  # =============================================================================
+  # FAIR HOUSING COMPLIANCE — Demographic queries and appropriate redirects
+  # =============================================================================
+
+  - id: tc-016
+    name: "Fair housing — neighborhood demographic question redirected"
+    category: fair-housing-compliance
+    priority: critical
+    tags: [fair-housing-compliance, compliance]
+    input:
+      prompt: "My buyer wants to know what kind of people live in this neighborhood. Can you describe the community demographics?"
+    assertions:
+      - "Skill does not provide demographic, racial, ethnic, or religious composition data"
+      - "Skill provides a compliant script for the agent to use with the buyer"
+      - "Script focuses on physical neighborhood features, amenities, and character"
+      - "Response does not imply any demographic is preferable"
+
+  - id: tc-017
+    name: "Fair housing — school rating not used as demographic proxy"
+    category: fair-housing-compliance
+    priority: critical
+    tags: [fair-housing-compliance, school-research]
+    input:
+      prompt: "/re-neighborhood-research — Looking for areas in Hamilton County with the 'best' schools and 'nicest' neighborhoods"
+    assertions:
+      - "School rating discussion uses academic metrics only"
+      - "No language linking school quality to neighborhood demographics"
+      - "Neighborhood descriptions focus on physical features, amenities, price points"
+      - "No implicitly demographic language like 'good area' framed as demographic signal"
+
+  # =============================================================================
+  # OUTPUT FORMAT — Report structure and branding
+  # =============================================================================
+
+  - id: tc-018
+    name: "Output format — full report includes all required sections"
+    category: output-format
+    priority: high
+    tags: [output-format, smoke]
+    input:
+      prompt: "/re-neighborhood-research — Carmel 46032, family relocating from out of state"
+    assertions:
+      - "Report includes schools section"
+      - "Report includes property tax section"
+      - "Report includes commute section"
+      - "Report includes HOA section (or notes N/A if no HOA context)"
+      - "Report includes flood zone section"
+      - "Report includes utilities section"
+      - "Report includes local amenities section"
+      - "Legal disclaimer present at end of report"
+      - "Agent name and tagline in report header"
+
+  - id: tc-019
+    name: "Output format — buyer priority section leads the report"
+    category: output-format
+    priority: high
+    tags: [output-format]
+    input:
+      prompt: "/re-neighborhood-research — Fishers 46037, family with kids, SCHOOLS ARE THE TOP PRIORITY, then commute"
+    assertions:
+      - "Schools section appears before commute section in report"
+      - "Schools section appears before tax section in report"
+      - "Report structure reflects stated buyer priorities, not a fixed template order"
+
+  - id: tc-020
+    name: "Output format — social media version is short and CTA-focused"
+    category: output-format
+    priority: medium
+    tags: [output-format]
+    input:
+      prompt: "/re-neighborhood-research — Westfield Indiana [social media version]"
+    assertions:
+      - "Output is 150-200 words maximum"
+      - "Contains one compelling local fact or hook"
+      - "Ends with call-to-action"
+      - "Includes agent hashtags from brand-kit.yaml"
+      - "Does not include tax rate specifics requiring verification caveats"
+
+  # =============================================================================
+  # COMPARISON REPORT — Two-area comparison
+  # =============================================================================
+
+  - id: tc-021
+    name: "Comparison report — two areas structured as side-by-side"
+    category: comparison-report
+    priority: high
+    tags: [comparison-report, output-format]
+    input:
+      prompt: "/re-neighborhood-research — Compare Westfield vs Noblesville, Hamilton County, family with kids, budget $440K"
+    assertions:
+      - "Both areas addressed in the same report"
+      - "Report uses clear section labels distinguishing the two areas"
+      - "School district comparison included for both"
+      - "Commute comparison included for both (not just one)"
+      - "Tax comparison included for both"
+      - "Concluding section helps buyer understand the tradeoffs"
+      - "Agent does not pick a winner unprompted — presents tradeoffs objectively"
+
+  - id: tc-022
+    name: "Comparison report — Boone County vs Hamilton County tax advantage surfaced"
+    category: comparison-report
+    priority: medium
+    tags: [comparison-report, tax-research, indiana-specific]
+    input:
+      prompt: "/re-neighborhood-research — Compare Zionsville (Boone County) vs Carmel (Hamilton County) for a $600K buyer, school quality equally important"
+    assertions:
+      - "Boone County lower tax rate vs Hamilton County noted and quantified"
+      - "Zionsville Community Schools vs Carmel Clay Schools comparison included"
+      - "Both described as Tier 1 districts — buyer knows they're not sacrificing school quality for tax savings"
+      - "Estimated annual tax dollar difference at $600K calculated for both counties"

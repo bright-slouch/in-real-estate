@@ -1,0 +1,283 @@
+---
+# re-closing-coordinator Test Cases
+# 14 cases across 6 categories
+
+test_suite: re-closing-coordinator
+version: "1.0"
+last_updated: "2026-03-31"
+
+categories:
+  - config-loading
+  - pre-closing-checklist
+  - utility-transfers
+  - closing-day-prep
+  - post-closing-sequence
+  - issue-management
+
+tests:
+
+  # -----------------------------------------------------------------------
+  # CONFIG LOADING
+  # -----------------------------------------------------------------------
+
+  - id: tc-001
+    name: "Config loads and vendor contacts auto-populate"
+    category: config-loading
+    priority: high
+    tags: [config, vendor-network, auto-populate]
+    input:
+      prompt: "/re-closing-coordinator clear to close — 4218 Buttonwood Dr, Fishers. Closing May 5. Slug: sarah-jones-fc-tucker"
+      context: "vendor-network.yaml has preferred title company Stewart Title"
+    assertions:
+      - "Skill loads agent-profile.yaml before generating any output"
+      - "Title company contact from vendor-network.yaml is auto-populated in the checklist"
+      - "Agent name and contact info appear in output (not generic placeholder)"
+      - "Email signature from email-templates.yaml is used in any generated communications"
+
+  # -----------------------------------------------------------------------
+  # PRE-CLOSING CHECKLIST
+  # -----------------------------------------------------------------------
+
+  - id: tc-002
+    name: "CD 3-day rule verified before confirming closing can proceed"
+    category: pre-closing-checklist
+    priority: high
+    tags: [closing-disclosure, TRID, 3-day-rule]
+    input:
+      prompt: >
+        /re-closing-coordinator clear to close — 4218 Buttonwood Dr.
+        Closing May 5. CD delivered today (May 2).
+        Slug: sarah-jones-fc-tucker
+      context: "CD delivered May 2; closing May 5 — exactly 3 business days"
+    assertions:
+      - "Skill confirms that 3 business days from May 2 is May 5 (3 business days, not calendar days)"
+      - "Skill notes that if any of the 3 days are federal bank holidays, the window extends"
+      - "Skill confirms May 5 closing can proceed IF no federal holidays fall in the 3-day window"
+      - "Skill provides the rule: federal TRID requirement, lender delivers CD, 3 business days must pass"
+
+  - id: tc-003
+    name: "Pre-closing checklist has buyer, seller, and agent sections"
+    category: pre-closing-checklist
+    priority: high
+    tags: [checklist, buyer, seller, agent]
+    input:
+      prompt: >
+        /re-closing-coordinator clear to close — 4218 Buttonwood Dr. Closing May 5.
+        Conventional buyer. Seller is Robert Davies. Slug: sarah-jones-fc-tucker
+      context: "Both buyer and seller sides need pre-closing prep"
+    assertions:
+      - "Output is organized into at least 3 sections: Agent to-do, Buyer to-do, Seller to-do"
+      - "Buyer section includes: review CD, confirm funds method, verify wire instructions verbally, bring ID"
+      - "Seller section includes: complete any repairs, gather all keys/openers/codes, arrange utility transfers"
+      - "Agent section includes: confirm CTC, schedule final walkthrough, confirm closing appointment"
+      - "Wire fraud warning appears in the buyer section"
+
+  - id: tc-004
+    name: "Final walkthrough checklist covers all major systems"
+    category: pre-closing-checklist
+    priority: high
+    tags: [final-walkthrough, checklist, systems]
+    input:
+      prompt: >
+        /re-closing-coordinator final walkthrough — 4218 Buttonwood Dr, Fishers.
+        Inspection credit was given (no repairs done). Slug: sarah-jones-fc-tucker
+      context: "Credit was given at inspection, so no repair items to verify"
+    assertions:
+      - "Walkthrough checklist covers all major systems: HVAC, appliances, plumbing, electrical"
+      - "Checklist includes checking for new damage or water intrusion since inspection"
+      - "Checklist confirms personal property items included in the PA are still present"
+      - "Checklist confirms all keys/openers/access devices are accounted for"
+      - "Since credit was given (no repairs), checklist does not have repair verification items"
+      - "Checklist has a photo-documentation recommendation for any issues found"
+
+  - id: tc-005
+    name: "Post-possession agreement flagged as required before closing"
+    category: pre-closing-checklist
+    priority: high
+    tags: [post-possession, IAR-196, seller-stays]
+    input:
+      prompt: >
+        /re-closing-coordinator closing prep — seller needs 30 days post-close.
+        IAR Form 196 drafted. Closing May 5. Slug: sarah-jones-fc-tucker
+      context: "Seller staying 30 days after close"
+    assertions:
+      - "Skill flags that IAR Form 196 must be signed BEFORE closing, not after"
+      - "Skill advises buyer to notify homeowners insurance about the temporary occupancy"
+      - "Skill specifies that during post-possession, seller is responsible for utilities"
+      - "Skill creates a calendar event for the post-possession move-out deadline"
+      - "Skill notes that holdover seller requires Indiana eviction process (same as tenant)"
+
+  # -----------------------------------------------------------------------
+  # UTILITY TRANSFERS
+  # -----------------------------------------------------------------------
+
+  - id: tc-006
+    name: "Utility list matches correct providers for Hamilton County"
+    category: utility-transfers
+    priority: high
+    tags: [utilities, Hamilton-County, Fishers, providers]
+    input:
+      prompt: >
+        /re-closing-coordinator utilities — 4218 Buttonwood Dr, Fishers IN 46037.
+        Slug: sarah-jones-fc-tucker
+      context: "Fishers is in Hamilton County, Indiana"
+    assertions:
+      - "Electric provider is AES Indiana or Duke Energy (not IPL — IPL is Marion County)"
+      - "Gas provider is Citizens Gas or CenterPoint Energy (depending on area of Fishers)"
+      - "Water provider is City of Fishers Utilities (fishers.in.us/utilities)"
+      - "Internet options include AT&T Fiber, Spectrum, and Metronet (available in Fishers)"
+      - "Output provides phone number or website for each utility for easy transfer"
+
+  - id: tc-007
+    name: "Utility list correct for Marion County (Indianapolis)"
+    category: utility-transfers
+    priority: high
+    tags: [utilities, Marion-County, Indianapolis]
+    input:
+      prompt: >
+        /re-closing-coordinator utilities — 8814 Eagle Creek Pkwy, Indianapolis IN 46254.
+        Slug: sarah-jones-fc-tucker
+      context: "Indianapolis is in Marion County, Indiana"
+    assertions:
+      - "Electric provider is IPL (Indianapolis Power & Light) or Duke Energy — not AES Indiana"
+      - "Gas provider is Citizens Gas (Citizen Energy Group)"
+      - "Water provider is Citizens Water (Citizen Energy Group)"
+      - "Trash is Republic Services for most Marion County addresses"
+      - "Internet options include AT&T Fiber and Spectrum"
+      - "Output notes that exact electric provider (IPL vs Duke) depends on specific neighborhood"
+
+  - id: tc-008
+    name: "Wire fraud warning included in closing day prep"
+    category: utility-transfers
+    priority: high
+    tags: [wire-fraud, closing-funds, wire-instructions]
+    input:
+      prompt: >
+        /re-closing-coordinator closing day prep — buyer side. 4218 Buttonwood Dr.
+        Closing tomorrow at Stewart Title. Slug: sarah-jones-fc-tucker
+      context: "Buyer needs closing day guidance including wire instructions"
+    assertions:
+      - "Wire fraud warning is prominently included — not buried in a footnote"
+      - "Buyer is instructed to CALL the title company to verbally confirm wire instructions"
+      - "Buyer is told to use a phone number obtained independently — NOT from the email with wire instructions"
+      - "Skill states clearly: fraudulent wires cannot be recovered"
+      - "Agent is instructed to verbally remind buyer before any wire is sent"
+
+  # -----------------------------------------------------------------------
+  # CLOSING DAY PREP
+  # -----------------------------------------------------------------------
+
+  - id: tc-009
+    name: "Buyer closing day guide covers what to bring and what to expect"
+    category: closing-day-prep
+    priority: high
+    tags: [closing-day, buyer, guide, what-to-bring]
+    input:
+      prompt: >
+        /re-closing-coordinator closing day prep — buyer side. 4218 Buttonwood Dr, Fishers.
+        Closing May 5 at 10am at Stewart Title. Conventional buyer.
+        Slug: sarah-jones-fc-tucker
+      context: "First-time buyers need detailed closing day guidance"
+    assertions:
+      - "Guide tells buyers to bring government-issued photo ID (both buyers if two are on title)"
+      - "Guide covers certified funds: cashier's check or wire per CD amount"
+      - "Guide explains the closing process: signing, funding, deed recording, key transfer"
+      - "Guide notes that funded closings require deed recording before keys transfer (Indiana practice)"
+      - "Guide warns buyers NOT to make large credit purchases before closing"
+      - "Guide estimates signing time (45–90 minutes for a financed purchase)"
+
+  - id: tc-010
+    name: "Seller closing day guide covers keys and proceeds"
+    category: closing-day-prep
+    priority: high
+    tags: [closing-day, seller, keys, proceeds]
+    input:
+      prompt: >
+        /re-closing-coordinator closing day prep — seller side. 4218 Buttonwood Dr.
+        Sellers: Robert Davies. Closing May 5 at Stewart Title.
+        Slug: sarah-jones-fc-tucker
+      context: "Seller-side closing day guide"
+    assertions:
+      - "Guide instructs seller to bring all keys, garage door openers, mailbox key, HOA fobs/codes"
+      - "Guide mentions appliance manuals are courteous to provide"
+      - "Guide explains seller will receive net proceeds via wire or check"
+      - "Guide tells seller to cancel homeowners insurance effective the day AFTER the deed records — not the day of closing"
+      - "Guide notes seller should have moved out before the final walkthrough"
+
+  # -----------------------------------------------------------------------
+  # POST-CLOSING SEQUENCE
+  # -----------------------------------------------------------------------
+
+  - id: tc-011
+    name: "Post-closing sequence includes all 4 touches with calendar events"
+    category: post-closing-sequence
+    priority: high
+    tags: [post-closing, follow-up, anniversary, calendar]
+    input:
+      prompt: >
+        /re-closing-coordinator post-closing — just closed 4218 Buttonwood Dr, Fishers.
+        Chris and Emily Sutton, first-time buyers. Slug: sarah-jones-fc-tucker
+      context: "Transaction just closed; post-closing sequence needed"
+    assertions:
+      - "Congratulations email is generated (ready to send within 2 hours)"
+      - "Review request is scheduled for Day 7–10 (not same day as close)"
+      - "30-day check-in is scheduled with homestead exemption reminder included"
+      - "6-month touch is scheduled with seasonal maintenance tips"
+      - "1-year anniversary touch is scheduled with CMA offer"
+      - "gcal_create_event is called for at least the 30-day, 6-month, and 1-year events"
+
+  - id: tc-012
+    name: "Indiana homestead exemption reminder included in 30-day check-in"
+    category: post-closing-sequence
+    priority: high
+    tags: [homestead-exemption, Indiana, property-tax, buyer]
+    input:
+      prompt: >
+        /re-closing-coordinator post-closing 30-day check-in — 4218 Buttonwood Dr.
+        Buyers are Chris and Emily Sutton. Slug: sarah-jones-fc-tucker
+      context: "30-day post-closing check-in"
+    assertions:
+      - "Homestead exemption reminder is included in the 30-day check-in message"
+      - "Reminder explains what the homestead exemption is (property tax reduction for primary residence)"
+      - "Reminder states the deadline: December 31 of the purchase year"
+      - "Reminder provides the relevant county assessor website for Hamilton County (hamiltoncounty.in.gov/assessor)"
+      - "Reminder mentions the mortgage deduction can be filed at the same time"
+
+  - id: tc-013
+    name: "Closing gift matched to client type and home value"
+    category: post-closing-sequence
+    priority: medium
+    tags: [closing-gift, client-type, gift-tracker]
+    input:
+      prompt: >
+        /re-closing-coordinator post-closing — just closed. Buyers: Chris and Emily Sutton,
+        first-time buyers. Purchase price $338,500. Slug: sarah-jones-fc-tucker
+      context: "First-time buyers at mid-market price point"
+    assertions:
+      - "Gift suggestion is appropriate for first-time buyers (not investor/repeat client gifts)"
+      - "Gift budget aligned with $338,500 purchase price (per closing-gift-tracker.md: $150–$250 range)"
+      - "Output references templates/closing-gift-tracker.md"
+      - "At least 2 specific gift ideas are provided (not just 'something thoughtful')"
+      - "Gift tracking entry is generated for the transaction"
+
+  # -----------------------------------------------------------------------
+  # ISSUE MANAGEMENT
+  # -----------------------------------------------------------------------
+
+  - id: tc-014
+    name: "Walkthrough issue — action plan with resolution options"
+    category: issue-management
+    priority: high
+    tags: [walkthrough, missing-property, issue, closing-delay]
+    input:
+      prompt: >
+        /re-closing-coordinator walkthrough issue — missing washer/dryer. Included in PA.
+        Seller says "mistake." Closing tomorrow. Slug: sarah-jones-fc-tucker
+      context: "Personal property included in sale is missing at walkthrough; closing is imminent"
+    assertions:
+      - "Skill generates an immediate action plan — not just generic advice"
+      - "Skill lists 3 resolution options: seller delivers before close; closing holdback; credit at close"
+      - "Draft communication to listing agent is provided"
+      - "Skill does NOT recommend blowing up the closing — frames it as resolvable"
+      - "Skill notes that all resolutions must be agreed in writing before signing"
+      - "Skill confirms buyer has the right to delay closing if issue is not resolved before close"

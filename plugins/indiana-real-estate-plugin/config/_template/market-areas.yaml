@@ -1,0 +1,185 @@
+# =============================================================================
+# MARKET AREAS — Central Indiana Real Estate Agent Plugin
+# =============================================================================
+# The agent's geographic service area and farm areas.
+# Loaded by: re-cma, re-market-update, re-news-briefing, re-neighborhood-research,
+# re-seller-consultation, re-buyer-consultation.
+#
+# INSTRUCTIONS:
+# - Primary service area = everywhere agent actively works
+# - Farm areas = geographic niches agent focuses marketing on
+# - MLS areas = MIBOR BLC geographic area codes (used in MLS searches)
+# - Price ranges are approximate — updated as market shifts
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# PRIMARY SERVICE AREA
+# -----------------------------------------------------------------------------
+
+primary_service_area:
+  description: >
+    [1-2 sentences describing the agent's overall geographic focus.
+    Example: "Primary focus is Hamilton County (Carmel, Fishers, Noblesville, Westfield,
+    Zionsville) with coverage extending to northern Marion County and Boone County."]
+
+  counties:
+    - name: "Hamilton"
+      state: "IN"
+      fips: "29"                      # Hamilton County FIPS code
+    - name: "Marion"
+      state: "IN"
+      fips: "97"
+    # Add/remove counties as appropriate:
+    # Boone (11), Hancock (59), Hendricks (63), Johnson (81),
+    # Madison (95), Morgan (109), Shelby (145)
+
+  cities:
+    # List all cities/towns where agent actively works
+    - "[City 1]"
+    - "[City 2]"
+    - "[City 3]"
+    # Common Central Indiana cities: Carmel, Fishers, Noblesville, Westfield,
+    # Zionsville, Avon, Brownsburg, Plainfield, Greenwood, Franklin,
+    # Anderson, Pendleton, Mooresville, Martinsville
+
+  neighborhoods:
+    # Specific subdivisions or neighborhoods agent specializes in (optional)
+    - "[Neighborhood 1]"
+    - "[Neighborhood 2]"
+
+  zip_codes:
+    # ZIP codes in primary service area
+    - "[XXXXX]"
+    - "[XXXXX]"
+
+  school_districts:
+    # Key school districts in service area — important for buyer searches
+    - name: "[District Name]"
+      county: "[County]"
+      # Common Central Indiana districts:
+      # Hamilton: Carmel Clay Schools, Hamilton Southeastern (HSE),
+      #            Noblesville Schools, Westfield-Washington Schools,
+      #            Zionsville Community Schools, Hamilton Heights
+      # Marion: MSD Washington Township, MSD Pike Township, IPS
+      # Hendricks: Avon Community Schools, Brownsburg Community Schools
+      # Boone: Zionsville (crosses into Boone), Lebanon Community School Corp
+
+  mls_areas:
+    # MIBOR BLC geographic area codes for MLS searches
+    # Contact MIBOR or check BLC for current area code assignments
+    - "[Area code]"   # e.g., "57" for Carmel
+    - "[Area code]"
+
+# -----------------------------------------------------------------------------
+# FARM AREAS
+# -----------------------------------------------------------------------------
+# Farm areas = specific neighborhoods or micro-markets where agent concentrates
+# listing prospecting and marketing efforts.
+
+farm_areas:
+  - name: "[Farm Area 1 — e.g., Bridgewater Club]"
+    type: "subdivision"               # subdivision | neighborhood | zip_code | school_district
+    city: "[City]"
+    county: "[County]"
+    zip_code: "[XXXXX]"
+    description: >
+      [2-3 sentences describing the farm area. Include: housing stock type,
+      approximate age, price range, what makes it distinctive.
+      Example: "Bridgewater Club is a gated golf course community in Westfield featuring
+      custom and semi-custom homes built 2000-2015. Strong HOA maintains community
+      appearance. Golf course membership adds desirability and affects pricing."]
+    price_range:
+      min: [XXXXXX]                   # Dollar amount, no commas (e.g., 450000)
+      max: [XXXXXX]                   # Dollar amount (e.g., 950000)
+    median_price: [XXXXXX]            # Approximate median price
+    property_types:
+      - "Single-family detached"
+      - "[e.g., Custom/semi-custom]"
+    typical_sqft:
+      min: [XXXX]
+      max: [XXXX]
+    typical_age_years:
+      built_after: [XXXX]             # Year (e.g., 2000)
+      built_before: [XXXX]            # Year (e.g., 2020)
+    hoa:
+      exists: true
+      annual_amount_approx: [XXXX]    # Annual HOA dues
+    school_district: "[District Name]"
+    key_selling_points:
+      - "[e.g., Zionsville school district]"
+      - "[e.g., Gated community with 24-hour guard]"
+      - "[e.g., Walking distance to town center amenities]"
+    marketing_notes: >
+      [Agent's notes on how to market in this farm area. Example: "Residents are
+      proud of school system. Lead with HSE schools in any marketing.
+      Neighbor referrals are strong here — past clients likely to refer."]
+
+  - name: "[Farm Area 2]"
+    type: "zip_code"
+    city: "[City]"
+    county: "[County]"
+    zip_code: "[XXXXX]"
+    description: >
+      [Description of this farm area]
+    price_range:
+      min: [XXXXXX]
+      max: [XXXXXX]
+    median_price: [XXXXXX]
+    property_types:
+      - "[Type]"
+    school_district: "[District]"
+    key_selling_points:
+      - "[Selling point]"
+    marketing_notes: >
+      [Notes]
+
+# Add more farm areas as needed
+
+# -----------------------------------------------------------------------------
+# MARKET NOTES
+# -----------------------------------------------------------------------------
+
+market_notes:
+  hot_areas:
+    # Areas currently experiencing strong demand and fast sales
+    - area: "[Neighborhood/City]"
+      reason: "[Why it's hot — new employer, school changes, development, etc.]"
+
+  emerging_areas:
+    # Up-and-coming areas with growth potential
+    - area: "[Neighborhood/City]"
+      reason: "[Why emerging — infrastructure investment, rezoning, new retail, etc.]"
+
+  seasonal_patterns: >
+    [Describe seasonal market patterns in agent's area. Example:
+    "Market traditionally heats up in March-May with peak activity April-June.
+    Summer slowdown is mild compared to national trends — Indiana buyers often
+    time to school year. October-November can be strong for correctly priced
+    homes before winter slowdown. January-February are slowest months but
+    buyers who are out are serious."]
+
+  new_construction:
+    # Active new construction developments in service area
+    - builder: "[Builder Name]"
+      development: "[Development Name]"
+      city: "[City]"
+      price_range: "[$XXX,XXX - $XXX,XXX]"
+      product_type: "[e.g., Single family, townhomes]"
+      status: "[Active | Selling out | Pre-sales]"
+      notes: "[e.g., Agent is buyer's agent only — builder has their own rep]"
+
+  known_developments:
+    # Infrastructure or commercial developments affecting values
+    - name: "[Development Name]"
+      type: "[e.g., Mixed-use retail, highway expansion, school addition]"
+      city: "[City]"
+      status: "[Planned | Under construction | Recently completed]"
+      impact: "[How it affects values in the area]"
+
+  price_tier_definitions:
+    # Local market price tiers — adjust to match current market conditions
+    entry_level: "Under $275,000"      # Often townhomes, condos, older ranch homes
+    move_up: "$275,000 - $450,000"     # Core suburban single-family market
+    premium: "$450,000 - $700,000"     # Larger homes, better finishes, top school districts
+    luxury: "$700,000 - $1,200,000"    # Custom builds, established neighborhoods
+    ultra_luxury: "Over $1,200,000"    # Estate properties, significant custom builds

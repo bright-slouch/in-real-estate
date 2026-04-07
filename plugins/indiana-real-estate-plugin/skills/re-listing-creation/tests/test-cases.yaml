@@ -1,0 +1,271 @@
+---
+# re-listing-creation Test Cases
+# 14 cases across 7 categories
+
+test_suite: re-listing-creation
+version: "1.0"
+last_updated: "2026-03-30"
+
+categories:
+  - config-loading
+  - blc-remarks
+  - extended-description
+  - fair-housing
+  - social-captions
+  - edge-cases
+  - compliance
+
+tests:
+
+  # -----------------------------------------------------------------------
+  # CONFIG LOADING
+  # -----------------------------------------------------------------------
+
+  - id: tc-001
+    name: "Load valid agent config on startup"
+    category: config-loading
+    priority: high
+    tags: [config, setup, agent-profile, brand-kit]
+    input:
+      prompt: >
+        /re-listing-creation jane-smith-fc-tucker
+        Address: 12345 Maple Creek Dr, Fishers IN 46037
+        Property: 4BR/2.5BA/2,850 sqft/2018. Kitchen remodel 2022, HSE schools.
+        List price: $549,000
+      context: "All config files exist for jane-smith-fc-tucker"
+    assertions:
+      - "Skill loads agent-profile.yaml before generating any copy"
+      - "Skill loads brand-kit.yaml for hashtags and tagline"
+      - "Agent name and brokerage appear in output — no generic placeholders"
+      - "Hashtags come from brand-kit.yaml, not hardcoded defaults"
+
+  - id: tc-002
+    name: "Missing config redirects to re-agent-setup"
+    category: config-loading
+    priority: high
+    tags: [config, error-handling, setup]
+    input:
+      prompt: "/re-listing-creation unknown-agent-xyz — 4BR/2BA, Fishers, $400K"
+      context: "No config directory exists for unknown-agent-xyz"
+    assertions:
+      - "Skill does not generate any listing copy without a loaded config"
+      - "Skill states it cannot find config for that slug"
+      - "Skill directs agent to run /re-agent-setup"
+      - "No placeholder or generic agent name in output"
+
+  - id: tc-003
+    name: "No slug provided — prompt for agent identification"
+    category: config-loading
+    priority: medium
+    tags: [config, agent-identification]
+    input:
+      prompt: "Write BLC remarks for my new Carmel listing — 5BR/4BA, $899K"
+      context: "No slug provided"
+    assertions:
+      - "Skill asks for agent slug or name before generating copy"
+      - "Skill does not generate partial content with generic branding"
+
+  # -----------------------------------------------------------------------
+  # BLC REMARKS
+  # -----------------------------------------------------------------------
+
+  - id: tc-004
+    name: "BLC remarks stay under 500 characters with count displayed"
+    category: blc-remarks
+    priority: high
+    tags: [blc, character-limit, compliance]
+    input:
+      prompt: >
+        Write BLC remarks: 4BR/2.5BA, 2,850 sqft, 2018 build, updated kitchen 2022
+        (quartz, SS appliances, island), LVP throughout main level, 3-car garage,
+        finished basement, cul-de-sac lot, HSE schools, $549,000.
+      context: "Valid config loaded"
+    assertions:
+      - "Remarks are 500 characters or fewer including spaces"
+      - "Character count is displayed alongside the remarks"
+      - "Approved MIBOR abbreviations used (BR, BA, SF, LVP, etc.)"
+      - "No agent name, phone number, or brokerage in remarks"
+      - "No website URL in remarks"
+      - "No ALL CAPS words (abbreviations accepted)"
+
+  - id: tc-005
+    name: "BLC remarks prohibit contact info and URLs"
+    category: blc-remarks
+    priority: high
+    tags: [blc, compliance, mibor-rules]
+    input:
+      prompt: >
+        Write BLC remarks. Include: Call Jane Smith at 317-555-0100.
+        Visit www.janesmith.com to see photos. Jane Smith | FC Tucker.
+      context: "Agent provides draft with prohibited content"
+    assertions:
+      - "Skill removes or refuses phone numbers in remarks"
+      - "Skill removes or refuses URLs in remarks"
+      - "Skill removes or refuses agent name in remarks"
+      - "Skill explains the MIBOR rule and where that content should go instead"
+
+  - id: tc-006
+    name: "Finished basement sqft not added to GLA"
+    category: blc-remarks
+    priority: high
+    tags: [blc, sqft, gla, ansi-standard]
+    input:
+      prompt: >
+        Property: 2,250 sqft above grade + 600 sqft finished basement.
+        Agent wants to advertise 2,850 sqft total.
+      context: "Valid config loaded"
+    assertions:
+      - "Skill does NOT write 2,850 sqft as the GLA"
+      - "Skill explains GLA is above-grade only per ANSI standard"
+      - "Skill recommends 2,250 sqft in GLA field; basement in BLC basement fields"
+      - "Remarks describe basement as a feature without claiming it as GLA"
+
+  # -----------------------------------------------------------------------
+  # EXTENDED DESCRIPTION
+  # -----------------------------------------------------------------------
+
+  - id: tc-007
+    name: "Extended description is 1,000–1,500 words, avoids clichés, uses local anchors"
+    category: extended-description
+    priority: high
+    tags: [extended-description, quality, brand-voice, central-indiana]
+    input:
+      prompt: >
+        Extended description: 4BR/2.5BA, 2,850 sqft, Fishers, HSE schools,
+        updated kitchen 2022, screened porch, walkout basement, $549,000.
+      context: "Valid config loaded with professional-friendly voice"
+    assertions:
+      - "Description is approximately 1,000–1,500 words"
+      - "Description does not begin with 'Welcome to your dream home'"
+      - "Description avoids: 'must see,' 'won't last long,' 'gem,' 'cozy,' 'charming'"
+      - "Description names specific Central Indiana anchors (Flat Fork Creek Park, I-69, HSE school names)"
+      - "Description uses prose narrative, not bullet points"
+      - "Voice matches agent-profile.yaml tone setting"
+      - "No contact info appears in the description"
+
+  - id: tc-008
+    name: "Pre-1978 home triggers lead paint disclosure flag"
+    category: extended-description
+    priority: high
+    tags: [disclosure, lead-paint, federal-law, pre-1978]
+    input:
+      prompt: >
+        1924 Craftsman bungalow in Broad Ripple — 3BR/1.5BA, 1,650 sqft,
+        original hardwoods, updated kitchen 2020, new roof 2022. $375,000.
+      context: "Valid config loaded. Year built: 1924."
+    assertions:
+      - "Skill flags pre-1978 construction and states EPA Lead Paint Disclosure is required"
+      - "Skill states disclosure must be provided before offer acceptance — federal law"
+      - "Skill does NOT include lead paint language in the listing copy"
+      - "1924 Craftsman character is treated as a positive differentiator in the copy"
+
+  # -----------------------------------------------------------------------
+  # FAIR HOUSING
+  # -----------------------------------------------------------------------
+
+  - id: tc-009
+    name: "Fair housing scan flags familial status language"
+    category: fair-housing
+    priority: high
+    tags: [fair-housing, familial-status, compliance, hud]
+    input:
+      prompt: >
+        Fair housing check: "Perfect starter home for young families or couples
+        looking to grow. Great schools, quiet street, family-friendly neighborhood."
+      context: "Compliance check only"
+    assertions:
+      - "Flags 'young families or couples looking to grow' as familial status violation"
+      - "Flags 'family-friendly neighborhood' as familial status violation"
+      - "Provides compliant rewrites focusing on factual property attributes"
+      - "Output status is NEEDS REVISION"
+
+  - id: tc-010
+    name: "Fair housing scan flags religious preference language"
+    category: fair-housing
+    priority: high
+    tags: [fair-housing, religion, compliance, hud]
+    input:
+      prompt: >
+        Fair housing check: "Minutes from Carmel's beautiful Grace Church.
+        Ideal for faith-based communities."
+      context: "Compliance check only"
+    assertions:
+      - "Flags religious preference language"
+      - "Recommends neutral alternative: 'minutes from Carmel's community amenities'"
+      - "Output status is NEEDS REVISION"
+
+  - id: tc-011
+    name: "Compliant copy passes fair housing review"
+    category: fair-housing
+    priority: medium
+    tags: [fair-housing, compliance, pass]
+    input:
+      prompt: >
+        Fair housing check: "Spacious 4BR home in Hamilton Southeastern school district.
+        Updated kitchen with quartz countertops and stainless appliances. Three-car garage,
+        screened porch, and walkout basement. Minutes from Flat Fork Creek Park and quick
+        I-69 access. Schedule your private showing today."
+      context: "Compliance check only"
+    assertions:
+      - "Output status is PASS"
+      - "No flagged phrases"
+      - "Skill confirms copy is compliant with federal Fair Housing Act and Indiana Civil Rights Law"
+
+  # -----------------------------------------------------------------------
+  # SOCIAL CAPTIONS
+  # -----------------------------------------------------------------------
+
+  - id: tc-012
+    name: "Instagram caption uses brand-kit hashtags and is correct length"
+    category: social-captions
+    priority: medium
+    tags: [social, instagram, brand-kit, hashtags]
+    input:
+      prompt: >
+        Instagram caption for: 12345 Maple Creek Dr, Fishers IN 46037.
+        4BR/2.5BA, updated kitchen, screened porch, HSE schools. $549,000.
+      context: "Valid config loaded. brand-kit.yaml has hashtags configured."
+    assertions:
+      - "Caption body is 150–200 characters before hashtags"
+      - "Hashtags include tags from brand-kit.yaml"
+      - "Property-specific tags present: #FishersIN and/or #HSESchools"
+      - "Caption does not include agent phone number or website URL"
+      - "Caption passes fair housing review"
+
+  # -----------------------------------------------------------------------
+  # EDGE CASES
+  # -----------------------------------------------------------------------
+
+  - id: tc-013
+    name: "Virtual staging disclosure included in remarks and counts toward character limit"
+    category: edge-cases
+    priority: medium
+    tags: [virtual-staging, disclosure, blc, character-limit]
+    input:
+      prompt: >
+        Write BLC remarks: 3BR/2BA, 1,800 sqft condo, downtown Indy, $289,000.
+        Note: Main living area and primary bedroom photos are virtually staged.
+      context: "Valid config loaded"
+    assertions:
+      - "Remarks include virtual staging disclosure (e.g., 'Some photos virtually staged')"
+      - "Disclosure language is included in the character count"
+      - "Final character count is 500 or fewer including the disclosure"
+
+  - id: tc-014
+    name: "Investment property copy uses investor-appropriate language and flags tenant rights"
+    category: edge-cases
+    priority: medium
+    tags: [investment, multi-family, copy-angle, tenant-rights]
+    input:
+      prompt: >
+        Listing copy for an income-producing duplex in Fountain Square, Indy.
+        2 units, each 2BR/1BA. Current rents: $950/mo each. Month-to-month leases.
+        Built 1952. $285,000.
+      context: "Valid config loaded"
+    assertions:
+      - "BLC remarks lead with investment angle and monthly gross income ($1,900/mo)"
+      - "Month-to-month lease flexibility is called out as a feature"
+      - "Fountain Square is named as a specific location anchor"
+      - "Fair housing review passes — no demographic steering language"
+      - "Skill notes to use multi-family BLC form, not single-family"
+      - "Skill notes Indiana tenant showing-notice requirements in agent remarks guidance"

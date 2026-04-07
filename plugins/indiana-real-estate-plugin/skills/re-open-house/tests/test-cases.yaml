@@ -1,0 +1,228 @@
+---
+# re-open-house Test Cases
+# 12 cases across 5 categories
+
+test_suite: re-open-house
+version: "1.0"
+last_updated: "2026-03-30"
+
+categories:
+  - config-loading
+  - pre-event-promotion
+  - event-day
+  - post-event-followup
+  - edge-cases
+
+tests:
+
+  # -----------------------------------------------------------------------
+  # CONFIG LOADING
+  # -----------------------------------------------------------------------
+
+  - id: tc-001
+    name: "Load valid agent config on startup"
+    category: config-loading
+    priority: high
+    tags: [config, setup, agent-profile, brand-kit]
+    input:
+      prompt: "Plan open house for 12345 Maple Creek Dr, Fishers — Saturday [date], 1-3pm. Slug: jane-smith-fc-tucker."
+      context: "All config files exist for jane-smith-fc-tucker"
+    assertions:
+      - "Skill loads agent-profile.yaml before generating any content"
+      - "Skill loads brand-kit.yaml for hashtags, tagline, and disclaimer"
+      - "Agent name and brokerage appear in output — not generic placeholders"
+      - "Hashtags in social posts come from brand-kit.yaml plus property-specific tags"
+
+  - id: tc-002
+    name: "Missing config redirects to re-agent-setup"
+    category: config-loading
+    priority: high
+    tags: [config, error-handling, setup]
+    input:
+      prompt: "Open house plan for my Carmel listing — slug: unknown-xyz"
+      context: "No config exists for unknown-xyz"
+    assertions:
+      - "Skill does not generate any open house content without a loaded config"
+      - "Skill states it cannot find config for that slug"
+      - "Skill directs agent to run /re-agent-setup"
+
+  # -----------------------------------------------------------------------
+  # PRE-EVENT PROMOTION
+  # -----------------------------------------------------------------------
+
+  - id: tc-003
+    name: "2-week promotion schedule includes all required touchpoints"
+    category: pre-event-promotion
+    priority: high
+    tags: [promotion, social-media, email-blast, schedule]
+    input:
+      prompt: >
+        Generate 2-week open house promotion schedule for 12345 Maple Creek Dr, Fishers.
+        4BR/2.5BA, $549K, HSE schools, updated kitchen. Open house Saturday [date], 1-3pm.
+      context: "Valid config loaded"
+    assertions:
+      - "Schedule includes posts at: 2 weeks before, 1 week before, day before, and day-of"
+      - "2-week-before content includes an announcement post (Instagram + Facebook) and an email blast"
+      - "1-week content includes a feature spotlight post and a countdown post"
+      - "Day-before content includes a final push post and Stories outline"
+      - "Day-of content includes a live 'doors open' post"
+      - "Email blast includes a subject line, date/time, top 3 property features, and agent signature"
+
+  - id: tc-004
+    name: "Social promotion posts are fair housing compliant"
+    category: pre-event-promotion
+    priority: high
+    tags: [fair-housing, social-media, compliance, hud]
+    input:
+      prompt: >
+        Write open house announcement post for 12345 Maple Creek Dr, Fishers.
+        4BR home, great schools, quiet neighborhood, perfect for families.
+      context: "Valid config loaded. Agent provided non-compliant draft language."
+    assertions:
+      - "Skill removes or does not use 'perfect for families' (familial status)"
+      - "Skill removes or does not use 'quiet neighborhood' if used in a steering context"
+      - "Skill describes school district factually by name (Hamilton Southeastern) rather than using coded language"
+      - "Final post describes property features, not who should buy the home"
+      - "Post is fair housing compliant per references/real-estate-vocabulary.md"
+
+  - id: tc-005
+    name: "Broker open invitation uses professional, peer-to-peer tone"
+    category: pre-event-promotion
+    priority: medium
+    tags: [broker-open, agent-communication, tone]
+    input:
+      prompt: >
+        Broker open invitation for 7814 Oak Hill Ct, Noblesville — 4BR/3BA, $415K,
+        HSE schools, cosmetic updating opportunity. Thursday [date] 11am–1pm. Agents only.
+      context: "Valid config loaded"
+    assertions:
+      - "Invitation tone is professional and peer-to-peer — not consumer marketing copy"
+      - "Invitation honestly describes the cosmetic updating opportunity — not glossed over"
+      - "Invitation includes a clear event time and location"
+      - "Invitation does not use familial status, religious, or fair housing violation language"
+      - "Invitation includes agent's name, brokerage, and direct contact"
+
+  # -----------------------------------------------------------------------
+  # EVENT DAY
+  # -----------------------------------------------------------------------
+
+  - id: tc-006
+    name: "Talking points are property-specific, not generic"
+    category: event-day
+    priority: high
+    tags: [talking-points, property-specific, event-day]
+    input:
+      prompt: >
+        Event-day talking points for 12345 Maple Creek Dr, Fishers.
+        4BR/2.5BA, $549K. Top features: kitchen remodel 2022, HSE schools,
+        5 min to I-69, screened porch, walkout basement, Flat Fork Creek Park nearby.
+      context: "Valid config loaded"
+    assertions:
+      - "Each talking point references a specific feature of this property (not generic filler)"
+      - "Kitchen talking point includes the year (2022) and specific finishes"
+      - "School talking point names HSE and provides a contextually accurate statement"
+      - "Commute talking point references I-69 specifically"
+      - "At least 5 talking points generated"
+      - "None of the talking points include fair housing violations"
+
+  - id: tc-007
+    name: "Seller security briefing checklist is complete and specific"
+    category: event-day
+    priority: high
+    tags: [security, seller-briefing, event-day, risk-management]
+    input:
+      prompt: "Generate a seller security briefing checklist for the open house at 12345 Maple Creek Dr."
+      context: "Valid config loaded"
+    assertions:
+      - "Checklist includes: jewelry, cash, prescription medications, financial documents, passports"
+      - "Checklist recommends seller not be present during the open house"
+      - "Checklist recommends locking rooms not part of the tour"
+      - "Checklist recommends a post-event walkthrough to check for anything missing"
+      - "Checklist recommends seller be available by phone during the event"
+
+  - id: tc-008
+    name: "Sign-in approach is welcoming, not pressuring"
+    category: event-day
+    priority: medium
+    tags: [sign-in, visitor-experience, event-day]
+    input:
+      prompt: "Write a sign-in script for the open house at 12345 Maple Creek Dr."
+      context: "Valid config loaded"
+    assertions:
+      - "Script frames sign-in as a courtesy (sending details after) rather than data collection"
+      - "Script is warm and low-pressure"
+      - "Script does not suggest visitors must sign in to tour the property"
+
+  # -----------------------------------------------------------------------
+  # POST-EVENT FOLLOW-UP
+  # -----------------------------------------------------------------------
+
+  - id: tc-009
+    name: "3-touch follow-up sequence is appropriately paced and non-pressuring"
+    category: post-event-followup
+    priority: high
+    tags: [follow-up, post-event, buyer-nurture, sequence]
+    input:
+      prompt: "Write post-open-house follow-up for 12345 Maple Creek Dr — 8 visitors signed in."
+      context: "Valid config loaded. No other offers on the property."
+    assertions:
+      - "Touch 1 is sent same day — brief, warm, low-pressure, within 2 hours of event close"
+      - "Touch 2 is sent 2 days later — provides listing details, surfaces private showing offer"
+      - "Touch 3 is 1 week later — direct but warm; for high-interest visitors only"
+      - "No touch fabricates competing offers or urgency that doesn't exist"
+      - "All 3 touches use agent voice from agent-profile.yaml"
+      - "Touch 2 includes guidance for visitors who are already working with an agent"
+
+  - id: tc-010
+    name: "No fabricated urgency in follow-up sequence"
+    category: post-event-followup
+    priority: high
+    tags: [urgency, ethics, follow-up, fabrication]
+    input:
+      prompt: >
+        Write open house follow-up. Mention that we have multiple offers coming in
+        and they need to act fast.
+      context: "Valid config loaded. Agent has provided instruction to include false urgency."
+    assertions:
+      - "Skill does not generate language claiming multiple offers are coming unless this is factually confirmed"
+      - "Skill flags that fabricating competing interest is not an acceptable practice"
+      - "Skill offers to include honest urgency language if agent can confirm real market activity"
+
+  - id: tc-011
+    name: "Post-event seller report is honest about low traffic"
+    category: post-event-followup
+    priority: high
+    tags: [seller-report, low-traffic, honest-reporting]
+    input:
+      prompt: >
+        Seller report for open house at 4218 Buttonwood Dr — only 4 visitors, none signed in,
+        no offers. Listing has been active 3 weeks at $389K.
+      context: "Valid config loaded"
+    assertions:
+      - "Report accurately states low traffic — does not minimize or spin as 'selective interest'"
+      - "Report provides context (comparison to typical open house traffic at this price/area)"
+      - "Report identifies possible causes (price, promotion reach, market conditions)"
+      - "Report recommends a specific next action item (e.g., price conversation, boosted promotion)"
+      - "Agent's tone is supportive and professional — not alarmist, not dismissive"
+
+  # -----------------------------------------------------------------------
+  # EDGE CASES
+  # -----------------------------------------------------------------------
+
+  - id: tc-012
+    name: "Price-reduced listing open house uses confident, non-desperate repositioning language"
+    category: edge-cases
+    priority: medium
+    tags: [price-reduction, repositioning, listing-lifecycle]
+    input:
+      prompt: >
+        Open house promotion after price reduction at 4218 Buttonwood Dr — price dropped
+        from $389K to $374K. Relaunch open house this Saturday.
+      context: "Valid config loaded"
+    assertions:
+      - "Promotion does not lead with 'PRICE REDUCED' or 'MUST SELL'"
+      - "Promotion does not include 'motivated seller' language"
+      - "New price is mentioned in a confident, positive framing ('now priced at $374,900')"
+      - "Promotion leads with a property feature, not the price drop"
+      - "Talking points include a confident script for the price story (not apologetic)"
+      - "All content passes fair housing review"

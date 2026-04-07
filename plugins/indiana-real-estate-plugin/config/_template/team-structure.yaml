@@ -1,0 +1,106 @@
+# =============================================================================
+# TEAM STRUCTURE — Central Indiana Real Estate Agent Plugin
+# =============================================================================
+# Defines team members, roles, and responsibilities.
+# Loaded by: re-client-communication, re-transaction-manager,
+# re-showing-coordinator, re-agent-setup.
+#
+# INSTRUCTIONS:
+# - Set enabled: false if agent works solo — leave other fields blank
+# - handles[] lists what this team member is responsible for
+# - The skill uses this to correctly route tasks and communications
+# - TC (transaction coordinator) is listed separately if external
+# =============================================================================
+
+enabled: false                        # true = agent leads or is part of a team
+                                      # false = solo agent, ignore rest of this file
+
+# Only fill in below if enabled: true
+
+team:
+  name: "[Team Name]"                 # e.g., "The Smith Group", "Hamilton County Home Team"
+  website: "https://[team-site]"      # Optional — team website if separate from individual agent site
+
+  leader:
+    name: "[Full Name]"
+    title: "Team Leader"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[name@brokerage.com]"
+    license_number: "RB[XXXXXXXX]"
+    handles:
+      - "Listing appointments"
+      - "Pricing strategy"
+      - "Buyer consultations (new clients)"
+      - "Negotiations"
+      - "Final contract review"
+
+  members:
+    - name: "[Full Name]"
+      title: "Buyer's Agent"          # e.g., Buyer's Agent | Listing Agent | Showing Agent | Admin
+      phone: "([XXX]) [XXX]-[XXXX]"
+      email: "[name@brokerage.com]"
+      license_number: "RB[XXXXXXXX]"  # Required if showing or writing offers
+      handles:
+        - "Buyer showings"
+        - "Offer writing"
+        - "Buyer communication"
+
+    - name: "[Full Name]"
+      title: "Showing Assistant"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      email: "[name@brokerage.com]"
+      license_number: "RB[XXXXXXXX]"  # Must be licensed to show properties
+      handles:
+        - "Property showings (backup)"
+        - "Open house coverage"
+
+    - name: "[Full Name]"
+      title: "Administrative Assistant"
+      phone: "([XXX]) [XXX]-[XXXX]"
+      email: "[name@brokerage.com]"
+      license_number: null            # Non-licensed admin — cannot show or negotiate
+      handles:
+        - "Listing input and MLS maintenance"
+        - "Photography scheduling"
+        - "Sign and lockbox coordination"
+        - "Marketing material prep"
+        - "Client gift orders"
+
+  # Transaction Coordinator — may be internal team member or external TC service
+  transaction_coordinator:
+    type: "external"                   # "internal" (team member) | "external" (TC service)
+    name: "[TC Full Name]"
+    company: "[TC Company Name if external]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[tc@company.com]"
+    handles:
+      - "Contract-to-close management"
+      - "Deadline tracking and reminders"
+      - "Document collection and organization"
+      - "Title and lender communication"
+      - "Closing day coordination"
+      - "Weekly status updates to parties"
+    fee_per_transaction: [XXX]        # TC fee in dollars (e.g., 395)
+    who_pays: "agent"                  # "agent" | "buyer" | "seller" | "split"
+
+  # Showing assistant (if different from team member handling showings)
+  showing_assistant:
+    enabled: false                     # true if agent uses a dedicated showing assistant
+    name: "[Name]"
+    phone: "([XXX]) [XXX]-[XXXX]"
+    email: "[email]"
+    license_number: "RB[XXXXXXXX]"    # Must be licensed
+
+# -----------------------------------------------------------------------------
+# COMMUNICATION ROUTING
+# -----------------------------------------------------------------------------
+# How incoming communications are routed to the right team member
+
+routing:
+  new_buyer_inquiry: "leader"         # Who handles new buyer inquiries
+  new_seller_inquiry: "leader"        # Who handles new seller inquiries
+  showing_requests: "showing_assistant_or_buyer_agent"
+  inspection_coordination: "transaction_coordinator"
+  contract_questions: "leader"
+  closing_questions: "transaction_coordinator"
+  post_close_follow_up: "leader"

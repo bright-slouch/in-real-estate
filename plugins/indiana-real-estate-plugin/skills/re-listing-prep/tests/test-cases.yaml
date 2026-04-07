@@ -1,0 +1,178 @@
+skill: re-listing-prep
+version: "1.0"
+test_cases:
+
+  - id: tc-001
+    name: "Config loading — valid slug"
+    category: config-loading
+    priority: high
+    tags: [config, agent-identity, smoke-test]
+    input:
+      prompt: "/re-listing-prep jane-smith-fc-tucker — 3BR/2BA in Fishers, 4 weeks"
+      context: "agent-profile.yaml and vendor-network.yaml exist for jane-smith-fc-tucker"
+    assertions:
+      - "Output references agent's name from agent-profile.yaml"
+      - "Vendor recommendations pull from vendor-network.yaml, not generic placeholders"
+      - "No skill execution before config is loaded"
+      - "Agent brokerage name appears in output header or attribution"
+
+  - id: tc-002
+    name: "Config loading — missing slug, redirect to setup"
+    category: config-loading
+    priority: high
+    tags: [config, error-handling, setup-redirect]
+    input:
+      prompt: "/re-listing-prep unknown-agent — prep plan for a ranch in Avon"
+      context: "No config folder exists for 'unknown-agent'"
+    assertions:
+      - "Skill does not produce a prep plan"
+      - "Output directs agent to run /re-agent-setup"
+      - "No vendor names or contact info invented"
+      - "Response is helpful, not just an error — explains what /re-agent-setup does"
+
+  - id: tc-003
+    name: "Repair recommendations — Tier 1 priorities for budget-constrained seller"
+    category: repair-recommendations
+    priority: high
+    tags: [repairs, roi, budget, triage]
+    input:
+      prompt: "Property: 3BR/2BA, 1988 build, worn carpet, dated paint. Budget: $1,500. Timeline: 2 weeks."
+      context: "Valid agent config loaded"
+    assertions:
+      - "Tier 1 items are recommended before Tier 2 or Tier 3"
+      - "Paint and deep clean appear in Tier 1 recommendations"
+      - "Total recommended spend does not significantly exceed stated $1,500 budget"
+      - "Tier 3 items (full kitchen remodel, HVAC) are explicitly excluded or marked 'skip'"
+      - "Cost estimates provided for each recommended item"
+
+  - id: tc-004
+    name: "Repair recommendations — over-improvement guardrail"
+    category: repair-recommendations
+    priority: high
+    tags: [repairs, roi, pricing-strategy, guardrail]
+    input:
+      prompt: "Seller wants to do a full kitchen remodel before listing. Home is in $220K neighborhood. Should they?"
+      context: "Valid agent config loaded; property is in an Indianapolis neighborhood with median price $215K"
+    assertions:
+      - "Full kitchen remodel at this price point is explicitly not recommended"
+      - "Skill recommends pricing to reflect kitchen condition instead"
+      - "Response includes cost-vs-return reasoning"
+      - "Minor kitchen updates (hardware, paint) may be offered as alternative"
+
+  - id: tc-005
+    name: "Staging guidance — occupied family home with pets"
+    category: staging-guidance
+    priority: high
+    tags: [staging, occupied, pets, odor]
+    input:
+      prompt: "Property: 4BR colonial in Greenwood, occupied with 2 large dogs. Carpet has odor. Timeline: 3 weeks."
+      context: "Valid agent config loaded"
+    assertions:
+      - "Odor mitigation is listed as top staging priority"
+      - "Carpet cleaning with enzyme treatment is specified (not just deodorizer)"
+      - "HVAC filter replacement recommended"
+      - "Guidance on removing pets for showings included"
+      - "Photo-day checklist includes pet removal and bowl/bed removal"
+      - "ShowingTime minimum notice window suggested to allow family to clear out pets"
+
+  - id: tc-006
+    name: "Staging guidance — vacant property"
+    category: staging-guidance
+    priority: high
+    tags: [staging, vacant, virtual-staging]
+    input:
+      prompt: "Property: Vacant 3BR/2BA contemporary in Noblesville, 2019 build, great condition. No furniture."
+      context: "Valid agent config loaded"
+    assertions:
+      - "Virtual staging is recommended for main living areas and primary bedroom"
+      - "MIBOR labeling requirement is called out: virtually staged photos must be labeled"
+      - "Physical prep still recommended (deep clean, bulbs, entry styling)"
+      - "Virtual staging is NOT presented as a substitute for decluttering"
+      - "Vendor source suggested if no stager in vendor-network.yaml"
+
+  - id: tc-007
+    name: "Photography shot list — standard residential"
+    category: photography
+    priority: medium
+    tags: [photography, shot-list, standard]
+    input:
+      prompt: "Generate a photography shot list for a 4BR/2.5BA two-story in Fishers, built 2008, no pool."
+      context: "Valid agent config loaded; photographer in vendor-network.yaml"
+    assertions:
+      - "Exterior shots include front elevation (multiple angles), backyard, street view"
+      - "Interior shots cover all rooms with at least one wide-angle per room"
+      - "Detail/feature shots called out (fireplace, kitchen, updated fixtures)"
+      - "Photo count target specified (25–40 for standard listing)"
+      - "Photographer from vendor-network.yaml is named with contact"
+      - "Twilight exterior is mentioned as an option (recommended or optional)"
+
+  - id: tc-008
+    name: "Photography shot list — drone recommendation"
+    category: photography
+    priority: medium
+    tags: [photography, drone, aerial, lot-size]
+    input:
+      prompt: "Property on 0.75 acres in Hamilton County with wooded backyard. Should drone be recommended?"
+      context: "Valid agent config loaded"
+    assertions:
+      - "Drone/aerial photography is explicitly recommended"
+      - "Reasoning provided: lot size exceeds 0.3 acres threshold"
+      - "Wooded lot is called out as a selling feature worth aerial capture"
+
+  - id: tc-009
+    name: "Vendor coordination — populates from config"
+    category: vendor-coordination
+    priority: high
+    tags: [vendor, config, coordination]
+    input:
+      prompt: "Generate vendor task list for a 4-week prep timeline."
+      context: "vendor-network.yaml includes photographer (Jane Doe Photography), cleaning (Sparkling Clean), painter (Mike's Painting), carpet (Indy Carpet Co.), landscaper (Green Thumb)"
+    assertions:
+      - "All vendor categories present in the task list table"
+      - "Vendor names match what is in vendor-network.yaml (not invented)"
+      - "Each vendor row includes recommended timing relative to photo date"
+      - "No vendor categories are left blank if filled in config"
+
+  - id: tc-010
+    name: "Vendor coordination — missing vendor gap flag"
+    category: vendor-coordination
+    priority: medium
+    tags: [vendor, config, gap-detection]
+    input:
+      prompt: "Generate vendor task list. Luxury home needs professional stager."
+      context: "vendor-network.yaml does not include a stager"
+    assertions:
+      - "Stager gap is explicitly flagged in the output"
+      - "Skill does not invent a stager name or contact"
+      - "Suggestion provided to add a stager to vendor-network.yaml"
+      - "Output remains useful despite the gap — other vendors still listed"
+
+  - id: tc-011
+    name: "Timeline — 2-week fast-track schedule"
+    category: timeline
+    priority: medium
+    tags: [timeline, fast-track, scheduling]
+    input:
+      prompt: "Seller wants to list in 2 weeks. 3BR ranch, occupied, good condition. What's the schedule?"
+      context: "Valid agent config loaded"
+    assertions:
+      - "2-week schedule is generated (not 4-week)"
+      - "Photography is scheduled on day 14 or later in the schedule"
+      - "Clean is scheduled the day before photography"
+      - "Contractor work (paint if recommended) is front-loaded in week 1"
+      - "Staging walkthrough appears before photography date"
+
+  - id: tc-012
+    name: "Pre-1978 property — lead paint flag"
+    category: repair-recommendations
+    priority: high
+    tags: [disclosure, lead-paint, pre-1978, compliance]
+    input:
+      prompt: "Property: 3BR/1.5BA bungalow in Broad Ripple, built 1952."
+      context: "Valid agent config loaded"
+    assertions:
+      - "Pre-1978 build year triggers a lead paint disclosure flag"
+      - "Seller's Residential Real Estate Sales Disclosure is mentioned"
+      - "Lead-Based Paint Addendum is named as a required document"
+      - "Flag is prominently placed, not buried"
+      - "Legal disclaimer included in output"

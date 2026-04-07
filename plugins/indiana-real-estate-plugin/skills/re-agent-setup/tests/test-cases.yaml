@@ -1,0 +1,306 @@
+# Test Cases: re-agent-setup
+# Format follows marketing-skills pattern: id, name, category, priority, tags, input, assertions
+# Run with: test tier0-only
+
+skill: re-agent-setup
+
+test_cases:
+
+  # =============================================================================
+  # SMOKE TESTS — Basic flow verification
+  # =============================================================================
+
+  - id: setup_001
+    name: "New solo agent — basic identity collection"
+    category: smoke
+    priority: critical
+    tags: [smoke, config-load, new-agent]
+    input:
+      prompt: "Set up a new agent profile for Jane Smith at F.C. Tucker Carmel office"
+    assertions:
+      - skill_asks_for_license_number: true
+      - skill_asks_for_managing_broker: true
+      - skill_generates_slug_containing: "jane-smith"
+      - skill_generates_slug_containing: "tucker"
+      - skill_confirms_slug_before_creating_files: true
+
+  - id: setup_002
+    name: "Slug generation — standard case"
+    category: smoke
+    priority: critical
+    tags: [smoke, slug-generation]
+    input:
+      agent_name: "Marcus Williams"
+      brokerage: "Keller Williams Indy Metro North"
+    assertions:
+      - generated_slug: "marcus-williams-kw-indy-metro-n"
+      - slug_is_kebab_case: true
+      - slug_contains_no_spaces: true
+      - slug_contains_no_special_characters: true
+
+  - id: setup_003
+    name: "Existing agent lookup — found in registry"
+    category: smoke
+    priority: critical
+    tags: [smoke, agent-lookup]
+    input:
+      prompt: "Update the vendor network for jane-smith-fc-tucker"
+    assertions:
+      - skill_loads_existing_config: true
+      - skill_does_not_start_full_onboarding: true
+      - skill_asks_which_section_to_update: true
+
+  - id: setup_004
+    name: "Existing agent lookup — not found, directs to setup"
+    category: smoke
+    priority: critical
+    tags: [smoke, agent-lookup, error-handling]
+    input:
+      prompt: "Update config for unknown-agent-xyz"
+    assertions:
+      - skill_reports_agent_not_found: true
+      - skill_offers_to_create_new_profile: true
+      - skill_does_not_crash: true
+
+  # =============================================================================
+  # CONFIG GENERATION — File creation and content
+  # =============================================================================
+
+  - id: setup_005
+    name: "All 7 config files created on completion"
+    category: config-generation
+    priority: critical
+    tags: [config-load, output-structure]
+    input:
+      flow: full_onboarding
+      agent_name: "Sarah Chen"
+      brokerage: "RE/MAX Advanced Realty"
+      license: "RB20012345"
+      managing_broker: "Tom Reynolds"
+      provide_all_required_fields: true
+    assertions:
+      - creates_file: "config/sarah-chen-remax-advanced/agent-profile.yaml"
+      - creates_file: "config/sarah-chen-remax-advanced/brand-kit.yaml"
+      - creates_file: "config/sarah-chen-remax-advanced/vendor-network.yaml"
+      - creates_file: "config/sarah-chen-remax-advanced/fee-structure.yaml"
+      - creates_file: "config/sarah-chen-remax-advanced/market-areas.yaml"
+      - creates_file: "config/sarah-chen-remax-advanced/email-templates.yaml"
+      - creates_file: "config/sarah-chen-remax-advanced/team-structure.yaml"
+
+  - id: setup_006
+    name: "agent-profile.yaml contains required fields"
+    category: config-generation
+    priority: critical
+    tags: [config-load, output-structure]
+    input:
+      flow: full_onboarding
+      agent_name: "David Park"
+      license: "RB20019876"
+    assertions:
+      - agent_profile_contains_field: "name.full"
+      - agent_profile_contains_field: "license.number"
+      - agent_profile_contains_field: "brokerage.name"
+      - agent_profile_contains_field: "contact.phone_cell"
+      - agent_profile_contains_field: "voice.tone_preset"
+      - agent_profile_contains_field: "voice.formality_scale"
+      - agent_profile_contains_field: "methodology.pricing_philosophy"
+
+  - id: setup_007
+    name: "fee-structure.yaml is marked SENSITIVE"
+    category: config-generation
+    priority: critical
+    tags: [config-load, output-structure, compliance]
+    input:
+      flow: full_onboarding_with_fee_data
+    assertions:
+      - fee_structure_contains_sensitive_warning: true
+      - fee_structure_data_not_in_other_config_files: true
+
+  - id: setup_008
+    name: "TODO comments added for skipped fields"
+    category: config-generation
+    priority: high
+    tags: [config-load, edge-case]
+    input:
+      prompt: "Set up for Tyler Okonkwo at Century 21 — he says he'll add his vendor list later"
+      skip_vendor_network: true
+    assertions:
+      - vendor_network_contains_todo_comments: true
+      - config_still_created_despite_incomplete_sections: true
+      - monday_config_status_set_to_partial: true
+
+  - id: setup_009
+    name: "Monday.com registry row created"
+    category: config-generation
+    priority: critical
+    tags: [integration, output-structure]
+    input:
+      flow: full_onboarding
+      agent_name: "Lisa Morales"
+      brokerage: "F.C. Tucker"
+    assertions:
+      - monday_row_created_in_registry_board: true
+      - monday_row_contains_name: "Lisa Morales"
+      - monday_row_contains_brokerage: "F.C. Tucker"
+      - monday_row_contains_slug: true
+      - monday_config_status_set_correctly: true
+
+  # =============================================================================
+  # VOICE AND TONE — Correct mapping of agent communication style
+  # =============================================================================
+
+  - id: setup_010
+    name: "Tone preset selection — professional-friendly"
+    category: voice-tone
+    priority: high
+    tags: [output-structure]
+    input:
+      agent_describes_style: "I'm professional but I want clients to feel comfortable. Not stiff, but not super casual either."
+    assertions:
+      - suggested_tone_preset: "professional-friendly"
+      - agent_can_override_suggestion: true
+
+  - id: setup_011
+    name: "Tone preset selection — luxury-polished"
+    category: voice-tone
+    priority: high
+    tags: [output-structure]
+    input:
+      agent_describes_style: "I work primarily with high-end buyers and sellers. My brand is sophisticated, premium, refined."
+    assertions:
+      - suggested_tone_preset: "luxury-polished"
+
+  - id: setup_012
+    name: "Formality scale captured correctly"
+    category: voice-tone
+    priority: medium
+    tags: [output-structure]
+    input:
+      agent_gives_formality_scale: 7
+    assertions:
+      - formality_scale_value_is: 7
+      - formality_scale_in_range_1_to_10: true
+
+  # =============================================================================
+  # VENDOR NETWORK — NMLS requirement enforcement
+  # =============================================================================
+
+  - id: setup_013
+    name: "Lender added without NMLS — skill requests NMLS"
+    category: vendor-network
+    priority: critical
+    tags: [compliance, indiana-compliance]
+    input:
+      add_lender: true
+      lender_name: "John Carpenter"
+      lender_company: "First Merchants Bank"
+      nmls_number: null
+    assertions:
+      - skill_asks_for_nmls_number: true
+      - skill_does_not_save_lender_without_nmls: true
+      - skill_explains_nmls_requirement: true
+
+  - id: setup_014
+    name: "Lender added with valid NMLS — saved correctly"
+    category: vendor-network
+    priority: high
+    tags: [output-structure]
+    input:
+      add_lender: true
+      lender_name: "Jennifer Walsh"
+      lender_company: "Ruoff Mortgage"
+      nmls_number: "1264100"
+      specialty: "Conventional and FHA"
+    assertions:
+      - lender_saved_to_vendor_network: true
+      - nmls_value_stored: "1264100"
+
+  - id: setup_015
+    name: "Primary vendor flagged correctly"
+    category: vendor-network
+    priority: medium
+    tags: [output-structure]
+    input:
+      add_lenders_count: 3
+      mark_first_as_primary: true
+    assertions:
+      - exactly_one_lender_has_primary_true: true
+
+  # =============================================================================
+  # UPDATE MODE — Modifying existing config
+  # =============================================================================
+
+  - id: setup_016
+    name: "Brokerage change — new slug generated, old archived"
+    category: update-mode
+    priority: high
+    tags: [edge-case, output-structure]
+    input:
+      agent_slug: "david-park-compass"
+      change: "switching to CENTURY 21 Scheetz"
+    assertions:
+      - new_slug_generated: "david-park-c21-scheetz"
+      - skill_confirms_new_slug_with_agent: true
+      - all_config_files_updated_with_new_brokerage: true
+      - monday_row_updated: true
+
+  - id: setup_017
+    name: "Team member added to solo agent config"
+    category: update-mode
+    priority: high
+    tags: [output-structure]
+    input:
+      agent_slug: "lisa-morales-fc-tucker"
+      add_team_member: true
+      team_member_name: "Brooke Tanner"
+      team_member_role: "Showing Assistant"
+      team_member_license: "RB20023456"
+    assertions:
+      - team_structure_enabled_set_to_true: true
+      - team_member_added_to_team_structure: true
+      - team_member_has_license_number: true
+      - only_team_structure_yaml_modified: true
+
+  - id: setup_018
+    name: "Vendor update — only vendor-network.yaml modified"
+    category: update-mode
+    priority: high
+    tags: [output-structure, edge-case]
+    input:
+      agent_slug: "sarah-chen-remax-advanced"
+      update: "update my inspector — old one retired, adding a new one"
+    assertions:
+      - only_vendor_network_yaml_modified: true
+      - other_config_files_unchanged: true
+      - old_inspector_removed_or_marked_inactive: true
+
+  # =============================================================================
+  # COMPLIANCE AND LEGAL
+  # =============================================================================
+
+  - id: setup_019
+    name: "Brokerage disclaimer text captured and stored"
+    category: compliance
+    priority: critical
+    tags: [indiana-compliance, disclaimer]
+    input:
+      flow: full_onboarding
+      brokerage: "F.C. Tucker Company"
+    assertions:
+      - brand_kit_contains_brokerage_disclaimer: true
+      - disclaimer_includes_equal_housing_language: true
+      - disclaimer_includes_licensed_in_indiana: true
+
+  - id: setup_020
+    name: "Fee structure never appears in client-facing config files"
+    category: compliance
+    priority: critical
+    tags: [indiana-compliance, disclaimer]
+    input:
+      flow: full_onboarding
+      fee_structure_provided: true
+    assertions:
+      - commission_rates_only_in_fee_structure_yaml: true
+      - commission_rates_not_in_agent_profile: true
+      - commission_rates_not_in_brand_kit: true
+      - commission_rates_not_in_email_templates: true
