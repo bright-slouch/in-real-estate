@@ -1,17 +1,17 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "alec-plugins",
+  "name": "in-real-estate",
   "owner": {
     "name": "bright-slouch",
     "email": "atmandla@gmail.com"
   },
   "metadata": {
-    "description": "Alec Mandla's Claude plugin collection"
+    "description": "Central Indiana real estate agent toolkit"
   },
   "plugins": [
     {
       "name": "real-estate-plugin",
-      "source": "./plugins/indiana-real-estate-plugin",
+      "source": "./",
       "description": "Central Indiana real estate agent toolkit — 19 skills for listing management, buyer consultation, offer writing, transaction coordination, market analysis, client communication, and compliance within the MIBOR BLC system"
     }
   ]

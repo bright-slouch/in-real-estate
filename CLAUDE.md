@@ -195,27 +195,29 @@ The orchestrator uses the `real-estate-plugin:skill-name` prefix format in its f
 ## Plugin Directory Layout
 
 ```
-real-estate-plugin/
-├── .claude-plugin/plugin.json   # Plugin manifest
-├── settings.json                # Default agent setting
-├── skills/                      # All 18 skills (auto-discovered by plugin system)
+in-real-estate/                          # repo root
+├── .claude-plugin/
+│   ├── marketplace.json                 # Marketplace manifest
+│   └── plugin.json                      # Plugin manifest
+├── settings.json                        # Default agent setting
+├── skills/                              # All 18 skills (auto-discovered by plugin system)
 │   ├── re-agent-setup/SKILL.md
 │   ├── re-cma/SKILL.md
 │   ├── re-buyer-consultation/SKILL.md
 │   └── ... (18 total)
-├── commands/                    # Slash commands (one per skill)
+├── commands/                            # Slash commands (one per skill)
 │   ├── re-agent-setup.md
 │   ├── re-cma.md
 │   └── ... (18 total)
-├── agents/                      # Agent definitions
+├── agents/                              # Agent definitions
 │   └── orchestrator.md
-├── orchestrator/                # Orchestrator SKILL.md stub
+├── orchestrator/                        # Orchestrator SKILL.md stub
 │   └── SKILL.md
-├── config/                      # Per-agent config files
+├── config/                              # Per-agent config files
 │   ├── _template/
 │   └── [agent-slug]/
-├── references/                  # Shared Indiana-specific references
-└── templates/                   # Shared document templates
+├── references/                          # Shared Indiana-specific references
+└── templates/                           # Shared document templates
 ```
 
 ---
